@@ -108,6 +108,183 @@ def save_registration_data(email: str, password: str, name: str,
         logger.error(f"保存注册数据失败: {e}")
 
 
+def select_session_from_list(dropmail: DropMail, logger: logging.Logger) -> Optional[str]:
+    """
+    显示可恢复的 Session 列表供用户选择
+    
+    Args:
+        dropmail: DropMail 实例
+        logger: 日志记录器
+        
+    Returns:
+        选择的 Session ID，如果取消则返回 None
+    """
+    logger.info("🔍 正在检查可用的 Sessions...")
+    
+    # 清理过期的 Sessions
+    expired_count = dropmail.cleanup_expired_sessions()
+    if expired_count > 0:
+        logger.info(f"🧹 已清理 {expired_count} 个过期的 Sessions")
+    
+    # 获取可用的 Sessions
+    sessions = dropmail.list_cached_sessions()
+    
+    if not sessions:
+        logger.warning("📭 没有找到可恢复的 Sessions")
+        return None
+    
+    # 验证 Sessions 有效性并过滤
+    valid_sessions = []
+    logger.info("🔍 验证 Sessions 有效性...")
+    
+    for session_cache in sessions:
+        # 临时切换到该 session 进行验证
+        old_token = dropmail.auth_token
+        old_session = dropmail.session_id
+        
+        dropmail.auth_token = session_cache.auth_token
+        dropmail.session_id = session_cache.session_id
+        
+        if dropmail._verify_session():
+            valid_sessions.append(session_cache)
+        else:
+            logger.info(f"❌ Session {session_cache.session_id[:8]}... 已过期，将被删除")
+            dropmail._remove_expired_session(session_cache.session_id)
+        
+        # 恢复原来的设置
+        dropmail.auth_token = old_token
+        dropmail.session_id = old_session
+    
+    if not valid_sessions:
+        logger.warning("📭 没有找到有效的 Sessions")
+        return None
+    
+    # 显示 Sessions 列表
+    logger.info("📋 可恢复的 Sessions:")
+    logger.info("=" * 80)
+    
+    for i, session_cache in enumerate(valid_sessions, 1):
+        # 格式化时间显示
+        try:
+            created_dt = datetime.fromisoformat(session_cache.created_at.replace('Z', '+00:00'))
+            created_time = created_dt.strftime('%Y-%m-%d %H:%M:%S')
+        except:
+            created_time = session_cache.created_at[:19].replace('T', ' ')
+        
+        try:
+            accessed_dt = datetime.fromisoformat(session_cache.last_accessed.replace('Z', '+00:00'))
+            last_accessed = accessed_dt.strftime('%Y-%m-%d %H:%M:%S')
+        except:
+            last_accessed = session_cache.last_accessed[:19].replace('T', ' ')
+        
+        logger.info(f"{i}. 邮箱: {session_cache.email_address}")
+        logger.info(f"   Session ID: {session_cache.session_id}")
+        logger.info(f"   创建时间: {created_time}")
+        logger.info(f"   最后访问: {last_accessed}")
+        logger.info("-" * 40)
+    
+    # 用户选择
+    while True:
+        try:
+            choice = input(f"\n请选择要恢复的 Session (1-{len(valid_sessions)}, 0=取消): ").strip()
+            
+            if choice == '0':
+                logger.info("❌ 用户取消选择")
+                return None
+            
+            choice_num = int(choice)
+            if 1 <= choice_num <= len(valid_sessions):
+                selected_session = valid_sessions[choice_num - 1]
+                logger.info(f"✓ 选择了 Session: {selected_session.email_address}")
+                return selected_session.session_id
+            else:
+                print(f"❌ 请输入 1-{len(valid_sessions)} 之间的数字")
+                
+        except ValueError:
+            print("❌ 请输入有效的数字")
+        except KeyboardInterrupt:
+            logger.info("\n❌ 用户中断选择")
+            return None
+
+
+def monitor_emails(dropmail: DropMail, logger: logging.Logger, check_interval: int = 10) -> None:
+    """
+    持续监控邮件并展示新收到的邮件
+    
+    Args:
+        dropmail: DropMail 实例
+        logger: 日志记录器
+        check_interval: 检查间隔（秒）
+    """
+    logger.info("📧 开始监控邮件...")
+    logger.info(f"📬 邮箱地址: {dropmail.addresses[0].address if dropmail.addresses else 'N/A'}")
+    logger.info(f"🔄 检查间隔: {check_interval} 秒")
+    logger.info("⚠️  按 Ctrl+C 停止监控")
+    logger.info("=" * 60)
+    
+    # 获取当前已有的邮件数量
+    try:
+        existing_mails = dropmail.get_mails()
+        last_mail_count = len(existing_mails)
+        last_mail_id = existing_mails[-1].id if existing_mails else None
+        
+        if existing_mails:
+            logger.info(f"📨 当前已有 {last_mail_count} 封邮件")
+            logger.info("最近的邮件:")
+            for mail in existing_mails[-3:]:  # 显示最近3封邮件
+                logger.info(f"  • 来自: {mail.from_addr}")
+                logger.info(f"    主题: {mail.subject}")
+                logger.info(f"    时间: {mail.received_at}")
+                logger.info("-" * 30)
+        else:
+            logger.info("📭 暂无邮件")
+            
+    except Exception as e:
+        logger.error(f"❌ 获取现有邮件失败: {e}")
+        last_mail_id = None
+        last_mail_count = 0
+    
+    logger.info("🔍 开始监控新邮件...")
+    
+    try:
+        while True:
+            try:
+                # 检查新邮件
+                if last_mail_id:
+                    new_mails = dropmail.get_mails(after_mail_id=last_mail_id)
+                else:
+                    all_mails = dropmail.get_mails()
+                    new_mails = all_mails[last_mail_count:] if len(all_mails) > last_mail_count else []
+                
+                if new_mails:
+                    logger.info(f"🎉 收到 {len(new_mails)} 封新邮件!")
+                    logger.info("=" * 60)
+                    
+                    for mail in new_mails:
+                        logger.info(f"📧 新邮件:")
+                        logger.info(f"   来自: {mail.from_addr}")
+                        logger.info(f"   收件: {mail.to_addr}")
+                        logger.info(f"   主题: {mail.subject}")
+                        logger.info(f"   时间: {mail.received_at}")
+                        logger.info(f"   内容预览: {mail.text[:100]}..." if len(mail.text) > 100 else f"   内容: {mail.text}")
+                        logger.info("-" * 40)
+                    
+                    # 更新最后邮件ID和数量
+                    last_mail_id = new_mails[-1].id
+                    last_mail_count += len(new_mails)
+                    
+                    logger.info("🔍 继续监控新邮件...")
+                
+                time.sleep(check_interval)
+                
+            except Exception as e:
+                logger.error(f"❌ 检查邮件时出错: {e}")
+                time.sleep(check_interval)
+                
+    except KeyboardInterrupt:
+        logger.info("\n⚠️  停止邮件监控")
+
+
 def wait_for_user_action(timeout_minutes: int, logger: logging.Logger) -> None:
     """
     等待用户操作或超时
@@ -198,6 +375,16 @@ def register(
     no_temp_email: Annotated[bool, typer.Option(
         "--no-temp-email",
         help="🚫 不使用临时邮箱，需要手动处理邮箱验证"
+    )] = False,
+    
+    dropmail_cache: Annotated[str, typer.Option(
+        "--dropmail-cache",
+        help="📁 DropMail Session 缓存文件路径"
+    )] = ".cache/dropmail_sessions.json",
+    
+    only_mail: Annotated[bool, typer.Option(
+        "--only-mail",
+        help="📧 只注册临时邮箱并监控邮件，不进行 AWS Builder ID 注册"
     )] = False
 ):
     """
@@ -214,6 +401,8 @@ def register(
     • 在图形验证码前停止，等待用户手动操作
     • 支持 Safari 浏览器
     • 自动保存注册信息到CSV文件
+    • 支持 Session 持久化
+    • 支持只注册邮箱模式
     
     [bold yellow]使用示例:[/bold yellow]
     
@@ -222,6 +411,9 @@ def register(
     
     # 指定邮箱和姓名
     auto-register-aws-builder register --email test@example.com --name "John Doe"
+    
+    # 只注册临时邮箱并监控邮件
+    auto-register-aws-builder register --only-mail
     
     # 使用无头模式
     auto-register-aws-builder register --headless
@@ -244,11 +436,19 @@ def register(
     try:
         # 步骤1: 准备邮箱
         dropmail = None
-        if not email and not no_temp_email:
+        if only_mail or (not email and not no_temp_email):
             logger.info("📧 创建临时邮箱...")
-            dropmail = DropMail()
+            dropmail = DropMail(cache_file=dropmail_cache)
             email = dropmail.get_temp_email()
             logger.info(f"✓ 临时邮箱: {email}")
+            logger.info(f"✓ Session ID: {dropmail.session_id}")
+            
+            if only_mail:
+                # 只注册邮箱模式，直接开始监控
+                logger.info("📧 只注册邮箱模式，开始监控邮件...")
+                monitor_emails(dropmail, logger, check_interval=10)
+                return  # 只监控邮件，不进行 AWS Builder ID 注册
+                
         elif not email:
             logger.error("❌ 必须提供邮箱地址或启用临时邮箱")
             raise typer.Exit(1)
@@ -331,6 +531,137 @@ def register(
             except Exception as e:
                 logger.warning(f"关闭浏览器时出错: {e}")
         logger.info("✓ 程序结束")
+
+
+@app.command()
+def sessions(
+    dropmail_cache: Annotated[str, typer.Option(
+        "--cache-file", "-c",
+        help="📁 DropMail Session 缓存文件路径"
+    )] = ".cache/dropmail_sessions.json",
+    
+    cleanup: Annotated[bool, typer.Option(
+        "--cleanup",
+        help="🧹 清理过期的 Sessions"
+    )] = False,
+    
+    restore: Annotated[bool, typer.Option(
+        "--restore", "-r",
+        help="🔄 显示可恢复的 Sessions 列表供选择并监控邮件"
+    )] = False,
+    
+    monitor: Annotated[Optional[str], typer.Option(
+        "--monitor", "-m",
+        help="📧 监控指定 Session ID 的邮件"
+    )] = None
+):
+    """
+    管理 DropMail Sessions
+    
+    显示、清理、恢复和监控 DropMail Sessions。
+    
+    [bold yellow]使用示例:[/bold yellow]
+    
+    # 显示所有 Sessions
+    auto-register-aws-builder sessions
+    
+    # 清理过期的 Sessions
+    auto-register-aws-builder sessions --cleanup
+    
+    # 恢复 Session 并监控邮件
+    auto-register-aws-builder sessions --restore
+    
+    # 监控指定 Session 的邮件
+    auto-register-aws-builder sessions --monitor SESSION_ID
+    """
+    dropmail = DropMail(cache_file=dropmail_cache)
+    logger = setup_logging(False)
+    
+    if restore:
+        # 显示 Session 列表供用户选择并监控
+        logger.info("🔄 恢复 DropMail Session")
+        
+        selected_session_id = select_session_from_list(dropmail, logger)
+        if not selected_session_id:
+            logger.info("❌ 未选择 Session，程序退出")
+            raise typer.Exit(0)
+        
+        if dropmail.restore_session(selected_session_id):
+            email = dropmail.addresses[0].address if dropmail.addresses else None
+            if email:
+                logger.info(f"✓ 成功恢复邮箱: {email}")
+                logger.info(f"✓ Session ID: {selected_session_id}")
+                
+                # 开始监控邮件
+                monitor_emails(dropmail, logger, check_interval=10)
+                return
+            else:
+                logger.error("❌ 恢复的 Session 中没有找到邮箱地址")
+                raise typer.Exit(1)
+        else:
+            logger.error(f"❌ 无法恢复 Session: {selected_session_id}")
+            raise typer.Exit(1)
+    
+    if monitor:
+        # 监控指定 Session 的邮件
+        if dropmail.restore_session(monitor):
+            logger.info(f"✓ 成功恢复 Session: {monitor}")
+            monitor_emails(dropmail, logger, check_interval=10)
+        else:
+            logger.error(f"❌ 无法恢复 Session: {monitor}")
+            raise typer.Exit(1)
+        return
+    
+    if cleanup:
+        # 清理过期的 Sessions
+        logger.info("🧹 清理过期的 Sessions...")
+        expired_count = dropmail.cleanup_expired_sessions()
+        logger.info(f"✓ 已清理 {expired_count} 个过期的 Sessions")
+    
+    # 显示所有 Sessions
+    sessions_list = dropmail.list_cached_sessions()
+    
+    if not sessions_list:
+        typer.echo("📭 没有找到任何 Sessions")
+        return
+    
+    typer.echo(f"📋 共找到 {len(sessions_list)} 个 Sessions:")
+    typer.echo("=" * 80)
+    
+    for i, session_cache in enumerate(sessions_list, 1):
+        # 格式化时间显示
+        try:
+            created_dt = datetime.fromisoformat(session_cache.created_at.replace('Z', '+00:00'))
+            created_time = created_dt.strftime('%Y-%m-%d %H:%M:%S')
+        except:
+            created_time = session_cache.created_at[:19].replace('T', ' ')
+        
+        try:
+            accessed_dt = datetime.fromisoformat(session_cache.last_accessed.replace('Z', '+00:00'))
+            last_accessed = accessed_dt.strftime('%Y-%m-%d %H:%M:%S')
+        except:
+            last_accessed = session_cache.last_accessed[:19].replace('T', ' ')
+        
+        # 验证 Session 是否有效
+        old_token = dropmail.auth_token
+        old_session = dropmail.session_id
+        
+        dropmail.auth_token = session_cache.auth_token
+        dropmail.session_id = session_cache.session_id
+        
+        is_valid = dropmail._verify_session()
+        status = "✓ 有效" if is_valid else "❌ 无效"
+        
+        # 恢复原来的设置
+        dropmail.auth_token = old_token
+        dropmail.session_id = old_session
+        
+        typer.echo(f"{i}. 邮箱: {session_cache.email_address}")
+        typer.echo(f"   Session ID: {session_cache.session_id}")
+        typer.echo(f"   状态: {status}")
+        typer.echo(f"   创建时间: {created_time}")
+        typer.echo(f"   最后访问: {last_accessed}")
+        typer.echo("-" * 40)
 
 
 @app.command()
