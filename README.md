@@ -1,14 +1,14 @@
-# Auto Update Q
+# Auto Builder Register
 
-Automatic Q project updater
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+[![GitHub issues](https://img.shields.io/github/issues/Hunter-Leo/auto-builder-register)](https://github.com/Hunter-Leo/auto-builder-register/issues)
+[![GitHub stars](https://img.shields.io/github/stars/Hunter-Leo/auto-builder-register)](https://github.com/Hunter-Leo/auto-builder-register/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Hunter-Leo/auto-builder-register)](https://github.com/Hunter-Leo/auto-builder-register/network)
 
-## Modules
+AWS Builder ID automatic registration tool with temporary email support
 
-### AWS Builder ID Auto Registration Tool
-
-AWS Builder ID automatic registration command-line tool based on Selenium and DropMail.
-
-#### Features
+## Features
 
 - ✅ Automatic temporary email generation
 - ✅ Automatic registration form filling
@@ -19,27 +19,84 @@ AWS Builder ID automatic registration command-line tool based on Selenium and Dr
 - ✅ Complete command line interface
 - ✅ Rich configuration options
 
-#### Quick Start
+## Screenshot
+
+![Registration Success](assets/register-success-page.png)
+
+*The tool automatically completes the registration process until the graphical captcha step*
+
+## Installation
+
+### Prerequisites
+
+Make sure you have [uv](https://docs.astral.sh/uv/getting-started/installation/) installed on your system.
+
+### Install from Source (Development)
+
+```bash
+git clone https://github.com/Hunter-Leo/auto-builder-register.git
+cd auto-builder-register
+uv sync
+uv build
+uv pip install -e .
+```
+
+### Install as Tool (Recommended for Users)
+
+```bash
+# Install directly from repository
+uv tool install git+https://github.com/Hunter-Leo/auto-builder-register.git
+
+# Upgrade to latest version
+uv tool upgrade auto-builder-register
+```
+
+### Alternative Installation Methods
+
+#### Using pip (Traditional)
+
+```bash
+git clone https://github.com/Hunter-Leo/auto-builder-register.git
+cd auto-builder-register
+pip install -e .
+```
+
+#### Using uvx (Run without Installation)
+
+```bash
+# Run directly without installing
+uvx --from auto-builder-register auto-register-aws-builder --help
+```
+
+### Usage Examples
+
+You can directly use the `auto-register-aws-builder` command after installation with any of the above methods.
 
 ```bash
 # Basic usage (automatically generate temporary email)
-uv run auto-register-aws-builder register
+auto-register-aws-builder register
 
 # Specify email and name
-uv run auto-register-aws-builder register --email test@example.com --name "John Doe"
+auto-register-aws-builder register --email test@example.com --name "John Doe"
 
 # Use Edge browser (default)
-uv run auto-register-aws-builder register --browser edge
+auto-register-aws-builder register --browser edge
 
 # Enable debug mode
-uv run auto-register-aws-builder register --debug
+auto-register-aws-builder register --debug
 
 # View registration records
-uv run auto-register-aws-builder list-records
+auto-register-aws-builder list-records
 
 # View help
-uv run auto-register-aws-builder --help
+auto-register-aws-builder --help
 ```
+
+## Modules
+
+### AWS Builder ID Auto Registration Tool
+
+AWS Builder ID automatic registration command-line tool based on Selenium and DropMail.
 
 #### Command Line Options
 
@@ -92,12 +149,6 @@ if new_mail:
 ```
 
 For detailed documentation, see [temp_mail module documentation](src/auto_update_q/temp_mail/README.md)
-
-## Installation
-
-```bash
-uv sync
-```
 
 ## Run Demos
 
@@ -155,7 +206,7 @@ uv run auto-register-aws-builder --help
 ## Project Structure
 
 ```
-auto-update-q/
+auto-builder-register/
 ├── src/
 │   └── auto_update_q/
 │       ├── __init__.py
