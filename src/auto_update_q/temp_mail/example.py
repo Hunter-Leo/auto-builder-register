@@ -1,7 +1,7 @@
 """
-DropMail 使用示例
+DropMail Usage Example
 
-演示如何使用 DropMail 类进行临时邮箱操作
+Demonstrates how to use the DropMail class for temporary email operations
 """
 
 import time
@@ -9,115 +9,115 @@ from dropmail import DropMail
 
 
 def main():
-    """主函数，演示 DropMail 的基本用法"""
+    """Main function demonstrating basic usage of DropMail"""
     
-    # 1. 创建 DropMail 实例
-    print("1. 创建 DropMail 实例...")
+    # 1. Create DropMail instance
+    print("1. Creating DropMail instance...")
     dropmail = DropMail()
-    print(f"认证令牌: {dropmail.auth_token}")
+    print(f"Authentication token: {dropmail.auth_token}")
     
-    # 2. 获取可用域名
-    print("\n2. 获取可用域名...")
+    # 2. Get available domains
+    print("\n2. Getting available domains...")
     try:
         domains = dropmail.get_domains()
-        print("可用域名:")
-        for domain in domains[:3]:  # 只显示前3个
+        print("Available domains:")
+        for domain in domains[:3]:  # Show only first 3
             print(f"  - {domain['name']} (ID: {domain['id']})")
     except Exception as e:
-        print(f"获取域名失败: {e}")
+        print(f"Failed to get domains: {e}")
     
-    # 3. 创建临时邮箱会话
-    print("\n3. 创建临时邮箱会话...")
+    # 3. Create temporary email session
+    print("\n3. Creating temporary email session...")
     try:
         session = dropmail.create_session()
-        print(f"会话ID: {session.id}")
-        print(f"过期时间: {session.expires_at}")
-        print(f"临时邮箱地址: {session.addresses[0].address}")
+        print(f"Session ID: {session.id}")
+        print(f"Expires at: {session.expires_at}")
+        print(f"Temporary email address: {session.addresses[0].address}")
     except Exception as e:
-        print(f"创建会话失败: {e}")
+        print(f"Failed to create session: {e}")
         return
     
-    # 4. 获取临时邮箱地址
-    print("\n4. 获取临时邮箱地址...")
+    # 4. Get temporary email address
+    print("\n4. Getting temporary email address...")
     temp_email = dropmail.get_temp_email()
-    print(f"临时邮箱: {temp_email}")
+    print(f"Temporary email: {temp_email}")
     
-    # 5. 添加额外的邮箱地址
-    print("\n5. 添加额外的邮箱地址...")
+    # 5. Add additional email address
+    print("\n5. Adding additional email address...")
     try:
         new_address = dropmail.add_address()
-        print(f"新邮箱地址: {new_address.address}")
+        print(f"New email address: {new_address.address}")
     except Exception as e:
-        print(f"添加地址失败: {e}")
+        print(f"Failed to add address: {e}")
     
-    # 6. 检查现有邮件
-    print("\n6. 检查现有邮件...")
+    # 6. Check existing emails
+    print("\n6. Checking existing emails...")
     try:
         mails = dropmail.get_mails()
         if mails:
-            print(f"找到 {len(mails)} 封邮件:")
+            print(f"Found {len(mails)} emails:")
             for mail in mails:
-                print(f"  - 从: {mail.from_addr}")
-                print(f"    到: {mail.to_addr}")
-                print(f"    主题: {mail.subject}")
-                print(f"    时间: {mail.received_at}")
-                print(f"    内容: {mail.text[:100]}...")
+                print(f"  - From: {mail.from_addr}")
+                print(f"    To: {mail.to_addr}")
+                print(f"    Subject: {mail.subject}")
+                print(f"    Time: {mail.received_at}")
+                print(f"    Content: {mail.text[:100]}...")
         else:
-            print("暂无邮件")
+            print("No emails found")
     except Exception as e:
-        print(f"获取邮件失败: {e}")
+        print(f"Failed to get emails: {e}")
     
-    # 7. 等待新邮件（演示用，实际使用时可以根据需要调整超时时间）
-    print(f"\n7. 等待新邮件（30秒超时）...")
-    print(f"请发送邮件到: {temp_email}")
+    # 7. Wait for new email (demo purpose, adjust timeout as needed in actual use)
+    print(f"\n7. Waiting for new email (30 second timeout)...")
+    print(f"Please send email to: {temp_email}")
     
     try:
         new_mail = dropmail.wait_for_mail(timeout=30, check_interval=3)
         if new_mail:
-            print("收到新邮件!")
-            print(f"  从: {new_mail.from_addr}")
-            print(f"  主题: {new_mail.subject}")
-            print(f"  内容: {new_mail.text}")
+            print("Received new email!")
+            print(f"  From: {new_mail.from_addr}")
+            print(f"  Subject: {new_mail.subject}")
+            print(f"  Content: {new_mail.text}")
         else:
-            print("超时，未收到新邮件")
+            print("Timeout, no new email received")
     except Exception as e:
-        print(f"等待邮件失败: {e}")
+        print(f"Failed to wait for email: {e}")
     
-    # 8. 发送邮件示例（需要配置SMTP信息）
-    print("\n8. 发送邮件示例...")
-    print("注意: 发送邮件需要配置有效的SMTP服务器信息")
+    # 8. Send email example (requires SMTP configuration)
+    print("\n8. Send email example...")
+    print("Note: Sending email requires valid SMTP server configuration")
     
-    # 取消注释以下代码并填入有效的SMTP信息来测试发送功能
+    # Uncomment the following code and fill in valid SMTP information to test sending functionality
     """
     try:
         success = dropmail.send_email(
             to_email=temp_email,
-            subject="测试邮件",
-            body="这是一封测试邮件",
-            from_email="your_email@gmail.com",  # 替换为你的邮箱
-            password="your_password"  # 替换为你的密码或应用专用密码
+            subject="Test Email",
+            body="This is a test email",
+            from_email="your_email@gmail.com",  # Replace with your email
+            password="your_password"  # Replace with your password or app-specific password
         )
         if success:
-            print("邮件发送成功!")
+            print("Email sent successfully!")
         else:
-            print("邮件发送失败!")
+            print("Failed to send email!")
     except Exception as e:
-        print(f"发送邮件异常: {e}")
+        print(f"Email sending exception: {e}")
     """
     
-    # 9. 获取会话信息
-    print("\n9. 获取会话信息...")
+    # 9. Get session information
+    print("\n9. Getting session information...")
     try:
         session_info = dropmail.get_session_info()
         if session_info:
-            print(f"会话ID: {session_info.id}")
-            print(f"过期时间: {session_info.expires_at}")
-            print(f"地址数量: {len(session_info.addresses)}")
-            print(f"邮件数量: {len(session_info.mails)}")
+            print(f"Session ID: {session_info.id}")
+            print(f"Expires at: {session_info.expires_at}")
+            print(f"Address count: {len(session_info.addresses)}")
+            print(f"Email count: {len(session_info.mails)}")
         else:
-            print("无法获取会话信息")
+            print("Unable to get session information")
     except Exception as e:
-        print(f"获取会话信息失败: {e}")
+        print(f"Failed to get session information: {e}")
 
 
 if __name__ == "__main__":

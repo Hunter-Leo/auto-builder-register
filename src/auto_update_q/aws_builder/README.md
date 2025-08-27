@@ -1,55 +1,55 @@
-# AWS Builder ID 自动注册模块
+# AWS Builder ID Automatic Registration Module
 
-基于 Selenium 实现的 AWS Builder ID 自动注册功能模块，采用模块化设计，职责分离，代码清晰易维护。
+AWS Builder ID automatic registration functionality module based on Selenium, featuring modular design, separation of concerns, and clean maintainable code.
 
-## 🎯 功能特性
+## 🎯 Features
 
-### 模块化设计
-- **职责分离**: 每个模块负责特定功能，降低耦合度
-- **代码复用**: 组件可独立使用和测试
-- **易于维护**: 修改某个功能不影响其他模块
-- **扩展性强**: 可轻松添加新功能或替换组件
+### Modular Design
+- **Separation of Concerns**: Each module handles specific functionality, reducing coupling
+- **Code Reuse**: Components can be used and tested independently
+- **Easy Maintenance**: Modifying one feature doesn't affect other modules
+- **High Extensibility**: Easy to add new features or replace components
 
-### 核心组件
+### Core Components
 
-| 组件 | 文件 | 职责 |
-|------|------|------|
-| **配置管理** | `config.py` | 集中管理所有配置项 |
-| **浏览器管理** | `browser_manager.py` | 浏览器初始化和配置 |
-| **元素等待** | `element_waiter.py` | 页面元素等待和查找 |
-| **表单处理** | `form_handler.py` | 表单填写逻辑 |
-| **验证码处理** | `captcha_handler.py` | 图形和邮箱验证码处理 |
-| **注册检查** | `registration_checker.py` | 注册状态验证 |
-| **选择器配置** | `optimized_selectors.py` | 页面元素选择器 |
-| **主控制器** | `aws_builder.py` | 主要业务逻辑协调 |
+| Component | File | Responsibility |
+|-----------|------|----------------|
+| **Configuration Management** | `config.py` | Centralized management of all configuration items |
+| **Browser Management** | `browser_manager.py` | Browser initialization and configuration |
+| **Element Waiting** | `element_waiter.py` | Page element waiting and finding |
+| **Form Handling** | `form_handler.py` | Form filling logic |
+| **CAPTCHA Handling** | `captcha_handler.py` | Image and email verification code handling |
+| **Registration Checking** | `registration_checker.py` | Registration status verification |
+| **Selector Configuration** | `optimized_selectors.py` | Page element selectors |
+| **Main Controller** | `aws_builder.py` | Main business logic coordination |
 
-## 🚀 功能特性
+## 🚀 Features
 
-- ✅ **自动填写注册表单** - 智能表单识别和填写
-- ✅ **邮箱验证处理** - 支持手动输入和自动获取验证码
-- ✅ **图形验证码处理** - 智能检测和手动输入支持
-- ✅ **会话管理** - 保持登录状态，支持页面导航
-- ✅ **密码生成** - 自动生成符合要求的安全密码
-- ✅ **多重选择器** - 提高元素查找成功率
-- ✅ **智能重试** - 自动重试机制，提高成功率
-- ✅ **动态等待** - 智能等待页面变化，无硬编码延时
-- ✅ **详细日志** - 完整的操作日志记录
-- ✅ **错误处理** - 完善的异常处理机制
+- ✅ **Automatic Form Filling** - Intelligent form recognition and filling
+- ✅ **Email Verification Handling** - Support for manual input and automatic verification code retrieval
+- ✅ **Image CAPTCHA Handling** - Intelligent detection and manual input support
+- ✅ **Session Management** - Maintain login state, support page navigation
+- ✅ **Password Generation** - Automatically generate secure passwords that meet requirements
+- ✅ **Multiple Selectors** - Improve element finding success rate
+- ✅ **Intelligent Retry** - Automatic retry mechanism to improve success rate
+- ✅ **Dynamic Waiting** - Intelligent waiting for page changes, no hardcoded delays
+- ✅ **Detailed Logging** - Complete operation log recording
+- ✅ **Error Handling** - Comprehensive exception handling mechanism
 
-## 📦 安装依赖
+## 📦 Install Dependencies
 
 ```bash
 uv add selenium webdriver-manager
 ```
 
-## 🎮 快速使用
+## 🎮 Quick Usage
 
-### 基础注册
+### Basic Registration
 
 ```python
 from auto_update_q.aws_builder import AWSBuilder
 
-# 使用上下文管理器（推荐）
+# Use context manager (recommended)
 with AWSBuilder(headless=False, debug=True) as aws_builder:
     credentials = aws_builder.register_aws_builder(
         email="your-email@example.com",
@@ -57,187 +57,187 @@ with AWSBuilder(headless=False, debug=True) as aws_builder:
     )
     
     if credentials:
-        print(f"注册成功！邮箱: {credentials.email}")
-        print(f"密码: {credentials.password}")
+        print(f"Registration successful! Email: {credentials.email}")
+        print(f"Password: {credentials.password}")
     else:
-        print("注册失败")
+        print("Registration failed")
 ```
 
-### 集成临时邮箱
+### Integration with Temporary Email
 
 ```python
 from auto_update_q.aws_builder import AWSBuilder
 from auto_update_q.temp_mail import DropMail
 
-# 创建临时邮箱
+# Create temporary email
 dropmail = DropMail()
 temp_email = dropmail.get_temp_email()
 
-# 使用临时邮箱注册（自动获取验证码）
+# Register using temporary email (auto-get verification code)
 with AWSBuilder() as aws_builder:
     credentials = aws_builder.register_aws_builder(
         email=temp_email,
         name="Test User",
-        dropmail=dropmail  # 自动获取邮箱验证码
+        dropmail=dropmail  # Auto-get email verification code
     )
 ```
 
-### 自定义配置
+### Custom Configuration
 
 ```python
 with AWSBuilder(
-    headless=False,      # 显示浏览器界面
-    timeout=60,          # 超时时间
-    debug=True,          # 启用调试日志
-    keep_browser=True    # 保持浏览器打开
+    headless=False,      # Show browser interface
+    timeout=60,          # Timeout duration
+    debug=True,          # Enable debug logging
+    keep_browser=True    # Keep browser open
 ) as aws_builder:
     credentials = aws_builder.register_aws_builder(
         email="test@example.com",
         name="Test User",
-        password="CustomPassword123!"  # 自定义密码
+        password="CustomPassword123!"  # Custom password
     )
 ```
 
-## 🏗️ 架构设计
+## 🏗️ Architecture Design
 
-### 组件关系图
+### Component Relationship Diagram
 
 ```
-AWSBuilder (主控制器)
-├── BrowserManager (浏览器管理)
-├── ElementWaiter (元素等待)
-├── FormHandler (表单处理)
+AWSBuilder (Main Controller)
+├── BrowserManager (Browser Management)
+├── ElementWaiter (Element Waiting)
+├── FormHandler (Form Handling)
 │   └── ElementWaiter
-├── CaptchaHandler (验证码处理)
+├── CaptchaHandler (CAPTCHA Handling)
 │   └── ElementWaiter
-├── RegistrationChecker (状态检查)
+├── RegistrationChecker (Status Checking)
 │   └── ElementWaiter
-└── Config (配置管理)
+└── Config (Configuration Management)
 ```
 
-### 数据流
+### Data Flow
 
 ```
-1. 初始化组件 → 2. 设置浏览器 → 3. 导航页面
-                                      ↓
-8. 返回凭证 ← 7. 检查状态 ← 6. 处理验证码 ← 4. 填写表单
-                                      ↓
-                                  5. 邮箱验证
+1. Initialize Components → 2. Setup Browser → 3. Navigate Page
+                                           ↓
+8. Return Credentials ← 7. Check Status ← 6. Handle CAPTCHA ← 4. Fill Form
+                                           ↓
+                                       5. Email Verification
 ```
 
-## 🔧 配置说明
+## 🔧 Configuration
 
-### 浏览器配置 (`config.py`)
+### Browser Configuration (`config.py`)
 
 ```python
 BROWSER_OPTIONS = {
-    "headless_args": [...],      # 无头模式参数
-    "common_args": [...],        # 通用参数
-    "experimental_options": {...} # 实验性选项
+    "headless_args": [...],      # Headless mode arguments
+    "common_args": [...],        # Common arguments
+    "experimental_options": {...} # Experimental options
 }
 ```
 
-### 选择器配置 (`optimized_selectors.py`)
+### Selector Configuration (`optimized_selectors.py`)
 
 ```python
 OPTIMIZED_SELECTORS = {
-    "email_input": [...],        # 邮箱输入框选择器
-    "name_input": [...],         # 姓名输入框选择器
-    "password_input": [...],     # 密码输入框选择器
-    # ... 更多选择器
+    "email_input": [...],        # Email input field selectors
+    "name_input": [...],         # Name input field selectors
+    "password_input": [...],     # Password input field selectors
+    # ... more selectors
 }
 ```
 
-### 超时和重试配置
+### Timeout and Retry Configuration
 
 ```python
 TIMEOUT_CONFIG = {
-    "email_input": 15,           # 邮箱输入超时
-    "default": 10,               # 默认超时
+    "email_input": 15,           # Email input timeout
+    "default": 10,               # Default timeout
 }
 
 RETRY_CONFIG = {
     "email_input": {
-        "max_rounds": 3,         # 最大重试轮数
-        "timeout": 5             # 每轮超时
+        "max_rounds": 3,         # Maximum retry rounds
+        "timeout": 5             # Timeout per round
     }
 }
 ```
 
-## 🧪 测试和演示
+## 🧪 Testing and Demo
 
-### 运行演示
+### Run Demo
 
 ```bash
-# 运行演示
+# Run demo
 uv run python src/auto_update_q/aws_builder/demo.py
 ```
 
-### 单元测试
+### Unit Testing
 
 ```bash
-# 测试各个组件
+# Test individual components
 uv run python test/test_aws_builder_refactored.py
 ```
 
-## 🔍 故障排除
+## 🔍 Troubleshooting
 
-### 常见问题
+### Common Issues
 
-1. **浏览器启动失败**
-   - 检查 Edge 浏览器是否已安装
-   - 检查网络连接
-   - 尝试手动下载 EdgeDriver
+1. **Browser Launch Failure**
+   - Check if Edge browser is installed
+   - Check network connection
+   - Try manually downloading EdgeDriver
 
-2. **元素查找失败**
-   - 检查选择器配置是否最新
-   - 启用调试模式查看详细日志
-   - 更新选择器配置
+2. **Element Finding Failure**
+   - Check if selector configuration is up to date
+   - Enable debug mode to view detailed logs
+   - Update selector configuration
 
-3. **验证码处理失败**
-   - 确保在有界面模式下运行
-   - 检查验证码输入是否正确
-   - 查看日志了解具体错误
+3. **CAPTCHA Handling Failure**
+   - Ensure running in GUI mode
+   - Check if CAPTCHA input is correct
+   - Check logs for specific errors
 
-### 调试技巧
+### Debugging Tips
 
 ```python
-# 启用详细日志
+# Enable detailed logging
 with AWSBuilder(debug=True) as aws_builder:
-    # ... 注册逻辑
+    # ... registration logic
 
-# 保持浏览器打开进行调试
+# Keep browser open for debugging
 with AWSBuilder(keep_browser=True) as aws_builder:
-    # ... 注册逻辑
-    input("按回车关闭浏览器...")
+    # ... registration logic
+    input("Press Enter to close browser...")
 ```
 
-## 🛠️ 扩展开发
+## 🛠️ Extension Development
 
-### 添加新的表单字段
+### Adding New Form Fields
 
-1. 在 `optimized_selectors.py` 中添加选择器
-2. 在 `form_handler.py` 中添加处理方法
-3. 在主流程中调用新方法
+1. Add selectors in `optimized_selectors.py`
+2. Add handling methods in `form_handler.py`
+3. Call new methods in main flow
 
-### 添加新的验证码类型
+### Adding New CAPTCHA Types
 
-1. 在 `captcha_handler.py` 中添加处理方法
-2. 更新主流程调用逻辑
+1. Add handling methods in `captcha_handler.py`
+2. Update main flow call logic
 
-### 自定义浏览器配置
+### Custom Browser Configuration
 
-1. 修改 `config.py` 中的配置
-2. 或在初始化时传入自定义参数
+1. Modify configuration in `config.py`
+2. Or pass custom parameters during initialization
 
-## 🎉 核心优势
+## 🎉 Core Advantages
 
-通过模块化设计，我们实现了：
+Through modular design, we achieved:
 
-1. **代码清晰**: 职责分离，逻辑清晰
-2. **易于维护**: 模块化便于修改和扩展
-3. **高可测试性**: 每个组件都可以独立测试
-4. **智能等待**: 动态等待机制，无硬编码延时
-5. **强扩展性**: 为未来功能扩展奠定基础
+1. **Clear Code**: Separation of concerns, clear logic
+2. **Easy Maintenance**: Modular design facilitates modification and extension
+3. **High Testability**: Each component can be tested independently
+4. **Intelligent Waiting**: Dynamic waiting mechanism, no hardcoded delays
+5. **Strong Extensibility**: Foundation for future feature expansion
 
-模块化的设计使得代码更加清晰、可维护，同时也为团队协作和功能扩展提供了便利。
+The modular design makes the code clearer and more maintainable, while also providing convenience for team collaboration and feature expansion.

@@ -1,16 +1,16 @@
 """
-AWS Builder ID 模块配置
+AWS Builder ID module configuration
 """
 
-# 基础配置
+# Basic configuration
 DEFAULT_TIMEOUT = 30
 DEFAULT_RETRY_ROUNDS = 3
 DEFAULT_RETRY_TIMEOUT = 3
 
-# URL 配置
+# URL configuration
 AWS_BUILDER_SIGNUP_URL = "https://profile.aws.amazon.com/"
 
-# 浏览器配置
+# Browser configuration
 BROWSER_OPTIONS = {
     "headless_args": [
         "--headless",
@@ -36,7 +36,7 @@ BROWSER_OPTIONS = {
     }
 }
 
-# 密码生成配置
+# Password generation configuration
 PASSWORD_CONFIG = {
     "length": 12,
     "characters": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*",
@@ -48,5 +48,5 @@ PASSWORD_CONFIG = {
     }
 }
 
-# 日志配置
+# Log configuration
 LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'

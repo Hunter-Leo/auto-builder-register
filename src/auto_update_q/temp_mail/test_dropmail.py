@@ -1,7 +1,7 @@
 """
-DropMail 测试文件
+DropMail Test File
 
-测试 DropMail 类的各项功能
+Tests various functions of the DropMail class
 """
 
 import unittest
@@ -10,27 +10,27 @@ from dropmail import DropMail, Mail, Address, Session
 
 
 class TestDropMail(unittest.TestCase):
-    """DropMail 测试类"""
+    """DropMail test class"""
     
     def setUp(self):
-        """测试前准备"""
+        """Setup before tests"""
         self.dropmail = DropMail("test_token_12345678")
     
     def test_init(self):
-        """测试初始化"""
-        # 测试使用指定token
+        """Test initialization"""
+        # Test with specified token
         dm = DropMail("custom_token")
         self.assertEqual(dm.auth_token, "custom_token")
         
-        # 测试自动生成token
+        # Test auto-generated token
         dm2 = DropMail()
         self.assertIsNotNone(dm2.auth_token)
         self.assertGreaterEqual(len(dm2.auth_token), 8)
     
     @patch('requests.post')
     def test_get_domains(self, mock_post):
-        """测试获取域名列表"""
-        # 模拟API响应
+        """Test getting domain list"""
+        # Mock API response
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "data": {
@@ -51,8 +51,8 @@ class TestDropMail(unittest.TestCase):
     
     @patch('requests.post')
     def test_create_session(self, mock_post):
-        """测试创建会话"""
-        # 模拟API响应
+        """Test creating session"""
+        # Mock API response
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "data": {
@@ -81,11 +81,11 @@ class TestDropMail(unittest.TestCase):
     
     @patch('requests.post')
     def test_get_mails(self, mock_post):
-        """测试获取邮件"""
-        # 先设置会话ID
+        """Test getting emails"""
+        # First set session ID
         self.dropmail.session_id = "session123"
         
-        # 模拟API响应
+        # Mock API response
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "data": {
@@ -116,7 +116,7 @@ class TestDropMail(unittest.TestCase):
         self.assertEqual(mails[0].subject, "Test Subject")
     
     def test_get_temp_email_without_session(self):
-        """测试在没有会话时获取临时邮箱"""
+        """Test getting temporary email without session"""
         with patch.object(self.dropmail, 'create_session') as mock_create:
             mock_session = Session(
                 id="session123",
@@ -132,7 +132,7 @@ class TestDropMail(unittest.TestCase):
             mock_create.assert_called_once()
     
     def test_get_temp_email_with_existing_addresses(self):
-        """测试在已有地址时获取临时邮箱"""
+        """Test getting temporary email with existing addresses"""
         self.dropmail.addresses = [Address("addr123", "existing@dropmail.me", "key123")]
         
         email = self.dropmail.get_temp_email()
@@ -141,8 +141,8 @@ class TestDropMail(unittest.TestCase):
     
     @patch('smtplib.SMTP')
     def test_send_email(self, mock_smtp):
-        """测试发送邮件"""
-        # 模拟SMTP服务器
+        """Test sending email"""
+        # Mock SMTP server
         mock_server = MagicMock()
         mock_smtp.return_value = mock_server
         
@@ -161,7 +161,7 @@ class TestDropMail(unittest.TestCase):
         mock_server.quit.assert_called_once()
     
     def test_send_email_without_credentials(self):
-        """测试没有提供凭据时发送邮件"""
+        """Test sending email without credentials"""
         with self.assertRaises(Exception) as context:
             self.dropmail.send_email(
                 to_email="recipient@example.com",
@@ -169,44 +169,44 @@ class TestDropMail(unittest.TestCase):
                 body="Test Body"
             )
         
-        self.assertIn("发送邮件需要提供发件人邮箱和密码", str(context.exception))
+        self.assertIn("Sending email requires sender email and password", str(context.exception))
 
 
 def run_basic_test():
-    """运行基本功能测试"""
-    print("开始基本功能测试...")
+    """Run basic functionality test"""
+    print("Starting basic functionality test...")
     
     try:
-        # 创建实例
+        # Create instance
         dropmail = DropMail()
-        print(f"✓ 创建 DropMail 实例成功，Token: {dropmail.auth_token}")
+        print(f"✓ DropMail instance created successfully, Token: {dropmail.auth_token}")
         
-        # 测试获取域名
+        # Test getting domains
         domains = dropmail.get_domains()
-        print(f"✓ 获取域名成功，共 {len(domains)} 个域名")
+        print(f"✓ Domains retrieved successfully, total {len(domains)} domains")
         
-        # 测试创建会话
+        # Test creating session
         session = dropmail.create_session()
-        print(f"✓ 创建会话成功，邮箱: {session.addresses[0].address}")
+        print(f"✓ Session created successfully, Email: {session.addresses[0].address}")
         
-        # 测试获取邮件
+        # Test getting emails
         mails = dropmail.get_mails()
-        print(f"✓ 获取邮件成功，共 {len(mails)} 封邮件")
+        print(f"✓ Emails retrieved successfully, total {len(mails)} emails")
         
-        print("所有基本功能测试通过!")
+        print("All basic functionality tests passed!")
         return True
         
     except Exception as e:
-        print(f"✗ 测试失败: {e}")
+        print(f"✗ Test failed: {e}")
         return False
 
 
 if __name__ == "__main__":
-    # 运行单元测试
-    print("运行单元测试...")
+    # Run unit tests
+    print("Running unit tests...")
     unittest.main(argv=[''], exit=False, verbosity=2)
     
     print("\n" + "="*50)
     
-    # 运行基本功能测试（需要网络连接）
+    # Run basic functionality test (requires network connection)
     run_basic_test()

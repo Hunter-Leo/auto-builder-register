@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-AWS Builder ID 自动注册演示
-展示模块的使用方法
+AWS Builder ID automatic registration demo
+Demonstrates module usage
 """
 
 import sys
@@ -13,8 +13,8 @@ from auto_update_q.temp_mail import DropMail
 
 
 def demo_basic_registration():
-    """基础注册演示"""
-    print("=== 基础注册演示 ===")
+    """Basic registration demo"""
+    print("=== Basic Registration Demo ===")
     
     with AWSBuilder(headless=False, debug=True) as aws_builder:
         credentials = aws_builder.register_aws_builder(
@@ -23,47 +23,47 @@ def demo_basic_registration():
         )
         
         if credentials:
-            print(f"✓ 注册成功！")
-            print(f"邮箱: {credentials.email}")
-            print(f"密码: {credentials.password}")
-            print(f"姓名: {credentials.name}")
+            print(f"✓ Registration successful!")
+            print(f"Email: {credentials.email}")
+            print(f"Password: {credentials.password}")
+            print(f"Name: {credentials.name}")
         else:
-            print("✗ 注册失败")
+            print("✗ Registration failed")
 
 
 def demo_with_temp_email():
-    """使用临时邮箱的注册演示"""
-    print("=== 使用临时邮箱注册演示 ===")
+    """Registration demo using temporary email"""
+    print("=== Registration Demo with Temporary Email ===")
     
-    # 创建临时邮箱
+    # Create temporary email
     dropmail = DropMail()
     temp_email = dropmail.get_temp_email()
-    print(f"临时邮箱: {temp_email}")
+    print(f"Temporary email: {temp_email}")
     
-    # 使用临时邮箱注册
+    # Register using temporary email
     with AWSBuilder(headless=False, debug=True) as aws_builder:
         credentials = aws_builder.register_aws_builder(
             email=temp_email,
             name="Temp User",
-            dropmail=dropmail  # 自动获取验证码
+            dropmail=dropmail  # Auto-get verification code
         )
         
         if credentials:
-            print(f"✓ 注册成功！")
-            print(f"邮箱: {credentials.email}")
-            print(f"密码: {credentials.password}")
+            print(f"✓ Registration successful!")
+            print(f"Email: {credentials.email}")
+            print(f"Password: {credentials.password}")
             
-            # 注册成功后导航到其他页面
+            # Navigate to other pages after successful registration
             success = aws_builder.navigate_to_url("https://view.awsapps.com/start")
             if success:
-                print(f"当前页面: {aws_builder.get_current_url()}")
+                print(f"Current page: {aws_builder.get_current_url()}")
         else:
-            print("✗ 注册失败")
+            print("✗ Registration failed")
 
 
 def demo_custom_password():
-    """自定义密码注册演示"""
-    print("=== 自定义密码注册演示 ===")
+    """Custom password registration demo"""
+    print("=== Custom Password Registration Demo ===")
     
     custom_password = "MySecurePassword123!"
     
@@ -75,45 +75,45 @@ def demo_custom_password():
         )
         
         if credentials:
-            print(f"✓ 注册成功！")
-            print(f"使用的密码: {credentials.password}")
+            print(f"✓ Registration successful!")
+            print(f"Password used: {credentials.password}")
         else:
-            print("✗ 注册失败")
+            print("✗ Registration failed")
 
 
 def main():
-    """主函数"""
-    print("AWS Builder ID 自动注册演示")
+    """Main function"""
+    print("AWS Builder ID Automatic Registration Demo")
     print("=" * 50)
     
     demos = [
-        ("1", "基础注册演示", demo_basic_registration),
-        ("2", "使用临时邮箱注册演示", demo_with_temp_email),
-        ("3", "自定义密码注册演示", demo_custom_password),
+        ("1", "Basic Registration Demo", demo_basic_registration),
+        ("2", "Registration Demo with Temporary Email", demo_with_temp_email),
+        ("3", "Custom Password Registration Demo", demo_custom_password),
     ]
     
-    print("可用演示：")
+    print("Available demos:")
     for key, name, _ in demos:
         print(f"  {key}. {name}")
     
-    choice = input("\n请选择演示 (1-3, 或按回车运行基础演示): ").strip()
+    choice = input("\nPlease select demo (1-3, or press Enter for basic demo): ").strip()
     
     if choice == "":
-        choice = "1"  # 默认运行基础演示
+        choice = "1"  # Default to basic demo
     
-    # 运行指定演示
+    # Run selected demo
     for key, name, func in demos:
         if choice == key:
             print(f"\n{'='*20} {name} {'='*20}")
             try:
                 func()
             except KeyboardInterrupt:
-                print("\n用户中断演示")
+                print("\nDemo interrupted by user")
             except Exception as e:
-                print(f"演示出错: {e}")
+                print(f"Demo error: {e}")
             break
     else:
-        print("无效选择")
+        print("Invalid selection")
 
 
 if __name__ == "__main__":

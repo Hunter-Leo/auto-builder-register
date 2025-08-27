@@ -1,103 +1,103 @@
 #!/usr/bin/env python3
 """
-基于实际页面源码分析的优化选择器配置
-通过分析page_source_step*.html文件得出的最精确选择器
+Optimized selector configuration based on actual page source analysis
+Most accurate selectors derived from analyzing page_source_step*.html files
 
-关键发现（基于page_source_step3_name_page_165012.html分析）:
-- 邮箱输入: input[autocomplete='on'][type='text'] 
-- 姓名输入: input[placeholder='Maria José Silva']
-- Next按钮: button[data-testid='signup-next-button'] (确认存在)
-- 表单ID: form#SignUp
-- 主要CSS类: awsui_variant-primary_vjswe_gmc8h_231, _2xAbzS8kNKd3Tl_k7Hlfav
+Key findings (based on page_source_step3_name_page_165012.html analysis):
+- Email input: input[autocomplete='on'][type='text'] 
+- Name input: input[placeholder='Maria José Silva']
+- Next button: button[data-testid='signup-next-button'] (confirmed exists)
+- Form ID: form#SignUp
+- Main CSS classes: awsui_variant-primary_vjswe_gmc8h_231, _2xAbzS8kNKd3Tl_k7Hlfav
 """
 
-# 优化后的选择器配置，按优先级排序
+# Optimized selector configuration, sorted by priority
 OPTIMIZED_SELECTORS = {
-    # 步骤1: 主页面 - Cookie处理
+    # Step 1: Main page - Cookie handling
     "cookie_accept": [
-        "button[data-id='awsccc-cb-btn-accept']",  # 精确的data-id选择器
-        ".awsccc-u-btn-primary",  # 备用class选择器
-        "button[aria-label*='Accept']",  # 备用aria-label选择器
+        "button[data-id='awsccc-cb-btn-accept']",  # Precise data-id selector
+        ".awsccc-u-btn-primary",  # Backup class selector
+        "button[aria-label*='Accept']",  # Backup aria-label selector
     ],
     
-    # 步骤2: 邮箱输入页面
+    # Step 2: Email input page
     "email_input": [
-        "input[autocomplete='on'][type='text']",  # 基于页面源码的精确属性组合
-        "input#formField24-1756198202888-5657",  # 基于页面源码的精确ID
-        "[data-testid='signup-email-input'] input",  # 测试ID选择器
-        "input.awsui_input_2rhyz_7gdci_149[autocomplete='on']",  # class和属性组合
-        "input[aria-labelledby*='email']",  # 可访问性选择器
-        "input[type='text'][value*='@']",  # 邮箱模式匹配
+        "input[autocomplete='on'][type='text']",  # Precise attribute combination based on page source
+        "input#formField24-1756198202888-5657",  # Precise ID based on page source
+        "[data-testid='signup-email-input'] input",  # Test ID selector
+        "input.awsui_input_2rhyz_7gdci_149[autocomplete='on']",  # Class and attribute combination
+        "input[aria-labelledby*='email']",  # Accessibility selector
+        "input[type='text'][value*='@']",  # Email pattern matching
     ],
     "email_next_button": [
-        "awsui-button[data-testid='test-primary-button'] button",  # 精确的组合选择器
-        "button[data-testid='test-primary-button']",  # 直接按钮选择器
-        "button[type='submit'][class*='primary']",  # 备用选择器
+        "awsui-button[data-testid='test-primary-button'] button",  # Precise combination selector
+        "button[data-testid='test-primary-button']",  # Direct button selector
+        "button[type='submit'][class*='primary']",  # Backup selector
     ],
     
-    # 步骤3: 姓名输入页面
+    # Step 3: Name input page
     "name_input": [
-        "input[placeholder='Maria José Silva']",  # 基于placeholder的精确选择器
-        "input#formField25-1756198202888-4727",  # 基于页面源码的精确ID
-        "[data-testid='signup-full-name-input'] input",  # 测试ID选择器
-        "input[type='text'][autocomplete='on']:not([value*='@'])",  # 非邮箱的文本输入框
-        "input.awsui_input_2rhyz_7gdci_149[placeholder]",  # 基于class和placeholder
+        "input[placeholder='Maria José Silva']",  # Precise selector based on placeholder
+        "input#formField25-1756198202888-4727",  # Precise ID based on page source
+        "[data-testid='signup-full-name-input'] input",  # Test ID selector
+        "input[type='text'][autocomplete='on']:not([value*='@'])",  # Non-email text input
+        "input.awsui_input_2rhyz_7gdci_149[placeholder]",  # Based on class and placeholder
     ],
     "name_next_button": [
-        "button[data-testid='signup-next-button']",  # 精确的测试ID（从页面源码确认）
-        "button[data-testid='signup-next-button'][type='submit']",  # 更具体的选择器
-        "button.awsui_variant-primary_vjswe_gmc8h_231[data-testid='signup-next-button']",  # 完整class匹配
-        "button._2xAbzS8kNKd3Tl_k7Hlfav.awsui_variant-primary_vjswe_gmc8h_231",  # 组合class选择器
+        "button[data-testid='signup-next-button']",  # Precise test ID (confirmed from page source)
+        "button[data-testid='signup-next-button'][type='submit']",  # More specific selector
+        "button.awsui_variant-primary_vjswe_gmc8h_231[data-testid='signup-next-button']",  # Complete class match
+        "button._2xAbzS8kNKd3Tl_k7Hlfav.awsui_variant-primary_vjswe_gmc8h_231",  # Combined class selector
     ],
     
-    # 步骤4: 邮箱验证码页面
+    # Step 4: Email verification code page
     "verification_code_input": [
-        "input[class*='awsui_input'][autocomplete='on'][type='text']",  # 匹配实际页面元素
-        "input[aria-labelledby*='formField'][type='text']",  # 基于aria-labelledby属性
+        "input[class*='awsui_input'][autocomplete='on'][type='text']",  # Match actual page elements
+        "input[aria-labelledby*='formField'][type='text']",  # Based on aria-labelledby attribute
         "input[data-testid='verification-code-input']",
         "input[placeholder*='code']",
         "input[type='text'][maxlength='6']",
         "input[aria-label*='verification']",
         ".verification-code input",
-        "input[type='text'][value='']",  # 空值的文本输入框
+        "input[type='text'][value='']",  # Empty value text input field
     ],
     "verify_button": [
-        "button[data-testid='email-verification-verify-button']",  # 匹配实际的验证按钮
-        "button[data-testid*='verification'][data-testid*='verify']",  # 通用验证按钮模式
-        "awsui-button[data-testid='test-primary-button'] button",  # 匹配AWS UI按钮
-        "button[data-testid='signup-next-button']",  # 注册下一步按钮
+        "button[data-testid='email-verification-verify-button']",  # Match actual verification button
+        "button[data-testid*='verification'][data-testid*='verify']",  # Generic verification button pattern
+        "awsui-button[data-testid='test-primary-button'] button",  # Match AWS UI button
+        "button[data-testid='signup-next-button']",  # Registration next button
         "button[data-testid='verify-button']",
         "button[type='submit'][class*='primary']",
         "button:contains('Verify')",
-        "button[class*='awsui'][class*='primary']",  # AWS UI主要按钮
-        "button[type='submit'][class*='awsui_variant-primary']",  # AWS UI主要提交按钮
+        "button[class*='awsui'][class*='primary']",  # AWS UI primary button
+        "button[type='submit'][class*='awsui_variant-primary']",  # AWS UI primary submit button
         ".verify-btn",
     ],
     "resend_code_button": [
-        "button[data-testid='email-verification-resend-code-button']",  # 精确匹配重发按钮
-        "button[class*='awsui_variant-normal'][data-testid*='resend']",  # 通用重发按钮模式
-        "button[class*='awsui_button'][class*='variant-normal']",  # AWS UI普通按钮
-        "button[type='button'][data-testid*='resend']",  # 按类型和testid匹配
+        "button[data-testid='email-verification-resend-code-button']",  # Precise match for resend button
+        "button[class*='awsui_variant-normal'][data-testid*='resend']",  # Generic resend button pattern
+        "button[class*='awsui_button'][class*='variant-normal']",  # AWS UI normal button
+        "button[type='button'][data-testid*='resend']",  # Match by type and testid
         ".resend-code-btn",
     ],
     
-    # 步骤5: 密码设置页面
+    # Step 5: Password setup page
     "password_input": [
-        "input#awsui-input-1",  # 密码输入框的精确ID
-        "input[class*='awsui-input'][class*='type-password'][type='password']:nth-of-type(2)",  # 第二个密码框
-        "input[type='password'][autocomplete='on']:nth-of-type(2)",  # 第二个密码输入框
-        "input[class*='awsui-input'][type='password']:nth-of-type(2)",  # 第二个awsui密码框
+        "input#awsui-input-1",  # Precise ID for password input field
+        "input[class*='awsui-input'][class*='type-password'][type='password']:nth-of-type(2)",  # Second password field
+        "input[type='password'][autocomplete='on']:nth-of-type(2)",  # Second password input field
+        "input[class*='awsui-input'][type='password']:nth-of-type(2)",  # Second awsui password field
         "input[data-testid='password-input']",
         "input[type='password'][autocomplete='new-password']:nth-of-type(2)",
         "input[aria-label*='password']:not([aria-label*='confirm'])",
         "#password",
     ],
     "confirm_password_input": [
-        "input#awsui-input-0",  # 密码确认框的精确ID
-        "input[class*='awsui-input'][class*='type-password'][type='password']:nth-of-type(1)",  # 第一个密码框
-        "input[type='password'][autocomplete='on']:nth-of-type(1)",  # 第一个密码输入框
-        "input[class*='awsui-input'][type='password']:nth-of-type(1)",  # 第一个awsui密码框
-        "input[data-testid='test-retype-input']",  # 直接匹配data-testid
+        "input#awsui-input-0",  # Precise ID for password confirmation field
+        "input[class*='awsui-input'][class*='type-password'][type='password']:nth-of-type(1)",  # First password field
+        "input[type='password'][autocomplete='on']:nth-of-type(1)",  # First password input field
+        "input[class*='awsui-input'][type='password']:nth-of-type(1)",  # First awsui password field
+        "input[data-testid='test-retype-input']",  # Direct match for data-testid
         "input[data-testid='confirm-password-input']",
         "input[aria-label*='confirm']",
         "#confirmPassword",
@@ -108,7 +108,7 @@ OPTIMIZED_SELECTORS = {
         "button[class*='awsui'][class*='primary']",
     ],
     
-    # 验证码相关
+    # CAPTCHA related
     "captcha_container": [
         ".captcha-container",
         "[data-testid='captcha']",
@@ -132,7 +132,7 @@ OPTIMIZED_SELECTORS = {
         ".error-message:contains('captcha')",
     ],
     
-    # 成功和错误指标
+    # Success and error indicators
     "success_indicators": [
         ".success-message",
         "[data-testid='success']",
@@ -164,7 +164,7 @@ OPTIMIZED_SELECTORS = {
     ],
 }
 
-# 超时配置
+# Timeout configuration
 TIMEOUT_CONFIG = {
     "email_input": 15,
     "name_input": 10,
@@ -174,7 +174,7 @@ TIMEOUT_CONFIG = {
     "default": 10,
 }
 
-# 重试配置
+# Retry configuration
 RETRY_CONFIG = {
     "email_input": {"max_rounds": 3, "timeout": 5},
     "name_input": {"max_rounds": 3, "timeout": 3},
@@ -187,52 +187,52 @@ RETRY_CONFIG = {
 
 def get_selector(element_name: str) -> list:
     """
-    获取指定元素的选择器列表
+    Get selector list for specified element
     
     Args:
-        element_name: 元素名称
+        element_name: Element name
         
     Returns:
-        选择器列表
+        Selector list
     """
     return OPTIMIZED_SELECTORS.get(element_name, [])
 
 
 def get_all_selectors() -> dict:
     """
-    获取所有选择器配置
+    Get all selector configurations
     
     Returns:
-        完整的选择器配置字典
+        Complete selector configuration dictionary
     """
     return OPTIMIZED_SELECTORS.copy()
 
 
 def get_timeout(element_name: str, default: int = 10) -> int:
     """
-    获取指定元素的超时配置
+    Get timeout configuration for specified element
     
     Args:
-        element_name: 元素名称
-        default: 默认超时时间
+        element_name: Element name
+        default: Default timeout duration
         
     Returns:
-        超时时间（秒）
+        Timeout duration (seconds)
     """
     return TIMEOUT_CONFIG.get(element_name, TIMEOUT_CONFIG.get("default", default))
 
 
 def get_retry_config(element_name: str, config_key: str, default_value) -> any:
     """
-    获取指定元素的重试配置
+    Get retry configuration for specified element
     
     Args:
-        element_name: 元素名称
-        config_key: 配置键名（max_rounds 或 timeout）
-        default_value: 默认值
+        element_name: Element name
+        config_key: Configuration key name (max_rounds or timeout)
+        default_value: Default value
         
     Returns:
-        配置值
+        Configuration value
     """
     element_config = RETRY_CONFIG.get(element_name, RETRY_CONFIG.get("default", {}))
     return element_config.get(config_key, default_value)
@@ -240,12 +240,12 @@ def get_retry_config(element_name: str, config_key: str, default_value) -> any:
 
 def add_selector(element_name: str, selector: str, priority: int = -1) -> None:
     """
-    添加新的选择器
+    Add new selector
     
     Args:
-        element_name: 元素名称
-        selector: 选择器字符串
-        priority: 优先级（0为最高，-1为最低）
+        element_name: Element name
+        selector: Selector string
+        priority: Priority (0 is highest, -1 is lowest)
     """
     if element_name not in OPTIMIZED_SELECTORS:
         OPTIMIZED_SELECTORS[element_name] = []
@@ -258,23 +258,23 @@ def add_selector(element_name: str, selector: str, priority: int = -1) -> None:
 
 def update_timeout(element_name: str, timeout: int) -> None:
     """
-    更新元素的超时配置
+    Update element timeout configuration
     
     Args:
-        element_name: 元素名称
-        timeout: 超时时间（秒）
+        element_name: Element name
+        timeout: Timeout duration (seconds)
     """
     TIMEOUT_CONFIG[element_name] = timeout
 
 
 def update_retry_config(element_name: str, max_rounds: int = None, timeout: int = None) -> None:
     """
-    更新元素的重试配置
+    Update element retry configuration
     
     Args:
-        element_name: 元素名称
-        max_rounds: 最大重试轮数
-        timeout: 每轮超时时间
+        element_name: Element name
+        max_rounds: Maximum retry rounds
+        timeout: Timeout per round
     """
     if element_name not in RETRY_CONFIG:
         RETRY_CONFIG[element_name] = {}

@@ -1,8 +1,8 @@
 """
-DropMail 临时邮箱类
+DropMail Temporary Email Class
 
-基于 dropmail.me API 实现的临时邮箱功能
-支持 Session 持久化和恢复功能
+Temporary email functionality based on dropmail.me API
+Supports Session persistence and recovery functionality
 """
 
 import json
@@ -21,7 +21,7 @@ from email.mime.multipart import MIMEMultipart
 
 @dataclass
 class SessionCache:
-    """Session 缓存数据类"""
+    """Session cache data class"""
     session_id: str
     auth_token: str
     email_address: str
@@ -31,18 +31,18 @@ class SessionCache:
     restore_keys: List[str]
     
     def to_dict(self) -> Dict[str, Any]:
-        """转换为字典"""
+        """Convert to dictionary"""
         return asdict(self)
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'SessionCache':
-        """从字典创建实例"""
+        """Create instance from dictionary"""
         return cls(**data)
 
 
 @dataclass
 class Mail:
-    """邮件数据类"""
+    """Email data class"""
     id: str
     from_addr: str
     to_addr: str
@@ -57,7 +57,7 @@ class Mail:
 
 @dataclass
 class Address:
-    """邮箱地址数据类"""
+    """Email address data class"""
     id: str
     address: str
     restore_key: str
@@ -65,7 +65,7 @@ class Address:
 
 @dataclass
 class Session:
-    """会话数据类"""
+    """Session data class"""
     id: str
     expires_at: str
     addresses: List[Address]
@@ -73,83 +73,83 @@ class Session:
 
 
 class DropMail:
-    """DropMail 临时邮箱类"""
+    """DropMail temporary email class"""
     
     def __init__(self, auth_token: Optional[str] = None, cache_file: Optional[str] = None):
         """
-        初始化 DropMail 实例
+        Initialize DropMail instance
         
         Args:
-            auth_token: 认证令牌，如果不提供则自动生成
-            cache_file: 缓存文件路径，默认为 .cache/dropmail_sessions.json
+            auth_token: Authentication token, automatically generated if not provided
+            cache_file: Cache file path, defaults to .cache/dropmail_sessions.json
         """
         self.auth_token = auth_token or self._generate_auth_token()
         self.base_url = "https://dropmail.me/api/graphql"
         self.session_id: Optional[str] = None
         self.addresses: List[Address] = []
         
-        # 设置缓存文件路径
+        # Set cache file path
         if cache_file:
             self.cache_file = Path(cache_file)
         else:
             self.cache_file = Path(".cache/dropmail_sessions.json")
         
-        # 确保缓存目录存在
+        # Ensure cache directory exists
         self.cache_file.parent.mkdir(parents=True, exist_ok=True)
         
     def _generate_auth_token(self) -> str:
-        """生成认证令牌"""
+        """Generate authentication token"""
         return str(uuid.uuid4()).replace('-', '')[:16]
     
     def save_session(self) -> bool:
         """
-        保存当前 session 到缓存文件
+        Save current session to cache file
         
         Returns:
-            保存是否成功
+            Whether save was successful
         """
         if not self.session_id or not self.addresses:
             return False
         
         try:
-            # 读取现有缓存
+            # Read existing cache
             sessions = self._load_cache()
             
-            # 创建缓存数据
+            # Create cache data
             session_cache = SessionCache(
                 session_id=self.session_id,
                 auth_token=self.auth_token,
                 email_address=self.addresses[0].address if self.addresses else "",
-                expires_at="",  # 将在验证时更新
+                expires_at="",  # Will be updated during validation
                 created_at=datetime.now().isoformat(),
                 last_accessed=datetime.now().isoformat(),
                 restore_keys=[addr.restore_key for addr in self.addresses]
             )
             
-            # 更新过期时间
+            # Update expiration time
             session_info = self.get_session_info()
             if session_info:
                 session_cache.expires_at = session_info.expires_at
             
-            # 保存到缓存
+            # Save to cache
             sessions[self.session_id] = session_cache.to_dict()
             
-            # 写入文件
+            # Write to file
             with open(self.cache_file, 'w', encoding='utf-8') as f:
                 json.dump(sessions, f, indent=2, ensure_ascii=False)
             
             return True
             
         except Exception as e:
-            print(f"保存 session 失败: {e}")
+            print(f"Failed to save session: {e}")
             return False
     
     def _load_cache(self) -> Dict[str, Dict[str, Any]]:
         """
-        加载缓存文件
+        Load cache file
         
         Returns:
-            缓存数据字典
+            Cache data dictionary
         """
         if not self.cache_file.exists():
             return {}
@@ -158,15 +158,15 @@ class DropMail:
             with open(self.cache_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except Exception as e:
-            print(f"加载缓存文件失败: {e}")
+            print(f"Failed to load cache file: {e}")
             return {}
     
     def list_cached_sessions(self) -> List[SessionCache]:
         """
-        列出所有缓存的 sessions
+        List all cached sessions
         
         Returns:
-            Session 缓存列表
+            Session cache list
         """
         sessions_data = self._load_cache()
         sessions = []
@@ -175,65 +175,65 @@ class DropMail:
             try:
                 sessions.append(SessionCache.from_dict(session_data))
             except Exception as e:
-                print(f"解析 session 数据失败: {e}")
+                print(f"Failed to parse session data: {e}")
                 continue
         
-        # 按创建时间排序
+        # Sort by creation time
         sessions.sort(key=lambda x: x.created_at, reverse=True)
         return sessions
     
     def restore_session(self, session_id: str) -> bool:
         """
-        恢复指定的 session
+        Restore specified session
         
         Args:
-            session_id: 要恢复的 session ID
+            session_id: Session ID to restore
             
         Returns:
-            恢复是否成功
+            Whether restore was successful
         """
         sessions_data = self._load_cache()
         
         if session_id not in sessions_data:
-            print(f"未找到 Session {session_id}")
+            print(f"Session {session_id} not found")
             return False
         
         try:
             session_cache = SessionCache.from_dict(sessions_data[session_id])
             
-            # 设置认证令牌和 session ID
+            # Set authentication token and session ID
             self.auth_token = session_cache.auth_token
             self.session_id = session_id
             
-            # 验证 session 是否仍然有效
+            # Verify if session is still valid
             if self._verify_session():
-                # 恢复地址信息
+                # Restore address information
                 session_info = self.get_session_info()
                 if session_info:
                     self.addresses = session_info.addresses
                     
-                    # 更新最后访问时间
+                    # Update last accessed time
                     self._update_last_accessed(session_id)
                     
-                    print(f"成功恢复 Session: {session_id}")
-                    print(f"邮箱地址: {session_cache.email_address}")
+                    print(f"Successfully restored Session: {session_id}")
+                    print(f"Email address: {session_cache.email_address}")
                     return True
             else:
-                print(f"Session {session_id} 已过期或无效")
-                # 从缓存中移除过期的 session
+                print(f"Session {session_id} has expired or is invalid")
+                # Remove expired session from cache
                 self._remove_expired_session(session_id)
                 return False
                 
         except Exception as e:
-            print(f"恢复 Session 失败: {e}")
+            print(f"Failed to restore Session: {e}")
             return False
     
     def _verify_session(self) -> bool:
         """
-        验证当前 session 是否有效
+        Verify if current session is valid
         
         Returns:
-            session 是否有效
+            Whether session is valid
         """
         if not self.session_id:
             return False
@@ -256,7 +256,7 @@ class DropMail:
     
     def _update_last_accessed(self, session_id: str) -> None:
         """
-        更新 session 的最后访问时间
+        Update session's last accessed time
         
         Args:
             session_id: Session ID
@@ -267,7 +267,7 @@ class DropMail:
             if session_id in sessions_data:
                 sessions_data[session_id]['last_accessed'] = datetime.now().isoformat()
                 
-                # 更新过期时间
+                # Update expiration time
                 session_info = self.get_session_info()
                 if session_info:
                     sessions_data[session_id]['expires_at'] = session_info.expires_at
@@ -276,11 +276,11 @@ class DropMail:
                     json.dump(sessions_data, f, indent=2, ensure_ascii=False)
                     
         except Exception as e:
-            print(f"更新最后访问时间失败: {e}")
+            print(f"Failed to update last accessed time: {e}")
     
     def _remove_expired_session(self, session_id: str) -> None:
         """
-        从缓存中移除过期的 session
+        Remove expired session from cache
         
         Args:
             session_id: Session ID
@@ -294,23 +294,23 @@ class DropMail:
                 with open(self.cache_file, 'w', encoding='utf-8') as f:
                     json.dump(sessions_data, f, indent=2, ensure_ascii=False)
                     
-                print(f"已移除过期的 Session: {session_id}")
+                print(f"Removed expired Session: {session_id}")
                 
         except Exception as e:
-            print(f"移除过期 Session 失败: {e}")
+            print(f"Failed to remove expired Session: {e}")
     
     def cleanup_expired_sessions(self) -> int:
         """
-        清理所有过期的 sessions
+        Clean up all expired sessions
         
         Returns:
-            清理的 session 数量
+            Number of cleaned sessions
         """
         sessions = self.list_cached_sessions()
         expired_count = 0
         
         for session_cache in sessions:
-            # 临时切换到该 session 进行验证
+            # Temporarily switch to that session for verification
             old_token = self.auth_token
             old_session = self.session_id
             
@@ -321,7 +321,7 @@ class DropMail:
                 self._remove_expired_session(session_cache.session_id)
                 expired_count += 1
             
-            # 恢复原来的设置
+            # Restore original settings
             self.auth_token = old_token
             self.session_id = old_session
         
@@ -329,14 +329,14 @@ class DropMail:
     
     def _make_request(self, query: str, variables: Optional[Dict] = None) -> Dict[str, Any]:
         """
-        发送 GraphQL 请求
+        Send GraphQL request
         
         Args:
-            query: GraphQL 查询语句
-            variables: 查询变量
+            query: GraphQL query statement
+            variables: Query variables
             
         Returns:
-            API 响应数据
+            API response data
         """
         url = f"{self.base_url}/{self.auth_token}"
         
@@ -363,10 +363,10 @@ class DropMail:
     
     def get_domains(self) -> List[Dict[str, Any]]:
         """
-        获取可用域名列表
+        Get available domain list
         
         Returns:
-            域名列表
+            Domain list
         """
         query = """
         query {
@@ -383,13 +383,13 @@ class DropMail:
     
     def create_session(self, domain_id: Optional[str] = None) -> Session:
         """
-        创建新的邮箱会话
+        Create new email session
         
         Args:
-            domain_id: 指定域名ID，如果不提供则使用随机域名
+            domain_id: Specify domain ID, uses random domain if not provided
             
         Returns:
-            创建的会话对象
+            Created session object
         """
         if domain_id:
             query = """
@@ -425,7 +425,7 @@ class DropMail:
         data = self._make_request(query, variables)
         session_data = data["introduceSession"]
         
-        # 解析地址数据
+        # Parse address data
         addresses = []
         for addr_data in session_data["addresses"]:
             addresses.append(Address(
@@ -434,7 +434,7 @@ class DropMail:
                 restore_key=addr_data.get("restoreKey", "")
             ))
         
-        # 创建会话对象
+        # Create session object
         session = Session(
             id=session_data["id"],
             expires_at=session_data["expiresAt"],
@@ -442,24 +442,24 @@ class DropMail:
             mails=[]
         )
         
-        # 保存会话信息
+        # Save session information
         self.session_id = session.id
         self.addresses = addresses
         
-        # 自动保存到缓存
+        # Auto save to cache
         self.save_session()
         
         return session
     
     def add_address(self, domain_id: Optional[str] = None) -> Address:
         """
-        为当前会话添加新的邮箱地址
+        Add new email address to current session
         
         Args:
-            domain_id: 指定域名ID，如果不提供则使用随机域名
+            domain_id: Specify domain ID, uses random domain if not provided
             
         Returns:
-            新创建的地址对象
+            Newly created address object
         """
         if not self.session_id:
             raise Exception("No active session. Please create a session first.")
@@ -501,10 +501,10 @@ class DropMail:
     
     def get_temp_email(self) -> str:
         """
-        获取临时邮箱地址
+        Get temporary email address
         
         Returns:
-            临时邮箱地址
+            Temporary email address
         """
         if not self.addresses:
             session = self.create_session()
@@ -514,13 +514,13 @@ class DropMail:
     
     def get_mails(self, after_mail_id: Optional[str] = None) -> List[Mail]:
         """
-        获取邮件列表
+        Get email list
         
         Args:
-            after_mail_id: 获取指定邮件ID之后的邮件
+            after_mail_id: Get emails after specified email ID
             
         Returns:
-            邮件列表
+            Email list
         """
         if not self.session_id:
             raise Exception("No active session. Please create a session first.")
@@ -590,7 +590,7 @@ class DropMail:
             )
             mails.append(mail)
         
-        # 更新最后访问时间
+        # Update last accessed time
         if self.session_id:
             self._update_last_accessed(self.session_id)
         
@@ -598,19 +598,19 @@ class DropMail:
     
     def wait_for_mail(self, timeout: int = 300, check_interval: int = 5) -> Optional[Mail]:
         """
-        等待接收邮件
+        Wait to receive email
         
         Args:
-            timeout: 超时时间（秒）
-            check_interval: 检查间隔（秒）
+            timeout: Timeout in seconds
+            check_interval: Check interval in seconds
             
         Returns:
-            接收到的邮件，如果超时则返回 None
+            Received email, returns None if timeout
         """
         start_time = time.time()
         last_mail_id = None
         
-        # 获取当前已有的邮件
+        # Get existing emails
         existing_mails = self.get_mails()
         if existing_mails:
             last_mail_id = existing_mails[-1].id
@@ -623,7 +623,7 @@ class DropMail:
                     new_mails = self.get_mails()
                 
                 if new_mails:
-                    return new_mails[0]  # 返回第一封新邮件
+                    return new_mails[0]  # Return first new email
                 
                 time.sleep(check_interval)
                 
@@ -638,40 +638,40 @@ class DropMail:
                    from_email: Optional[str] = None, password: Optional[str] = None,
                    is_html: bool = False) -> bool:
         """
-        发送邮件（使用外部SMTP服务器）
+        Send email (using external SMTP server)
         
         Args:
-            to_email: 收件人邮箱
-            subject: 邮件主题
-            body: 邮件内容
-            smtp_server: SMTP服务器地址
-            smtp_port: SMTP服务器端口
-            from_email: 发件人邮箱
-            password: 发件人邮箱密码
-            is_html: 是否为HTML格式
+            to_email: Recipient email
+            subject: Email subject
+            body: Email content
+            smtp_server: SMTP server address
+            smtp_port: SMTP server port
+            from_email: Sender email
+            password: Sender email password
+            is_html: Whether HTML format
             
         Returns:
-            发送是否成功
+            Whether send was successful
         """
         if not from_email or not password:
-            raise Exception("发送邮件需要提供发件人邮箱和密码")
+            raise Exception("Sending email requires sender email and password")
         
         try:
-            # 创建邮件对象
+            # Create email object
             msg = MIMEMultipart()
             msg['From'] = from_email
             msg['To'] = to_email
             msg['Subject'] = subject
             
-            # 添加邮件内容
+            # Add email content
             if is_html:
                 msg.attach(MIMEText(body, 'html'))
             else:
                 msg.attach(MIMEText(body, 'plain'))
             
-            # 连接SMTP服务器并发送邮件
+            # Connect to SMTP server and send email
             server = smtplib.SMTP(smtp_server, smtp_port)
-            server.starttls()  # 启用TLS加密
+            server.starttls()  # Enable TLS encryption
             server.login(from_email, password)
             
             text = msg.as_string()
@@ -681,15 +681,15 @@ class DropMail:
             return True
             
         except Exception as e:
-            print(f"发送邮件失败: {e}")
+            print(f"Failed to send email: {e}")
             return False
     
     def get_session_info(self) -> Optional[Session]:
         """
-        获取当前会话信息
+        Get current session information
         
         Returns:
-            会话信息，如果没有活动会话则返回 None
+            Session information, returns None if no active session
         """
         if not self.session_id:
             return None
@@ -729,7 +729,7 @@ class DropMail:
             
             session_data = data["session"]
             
-            # 解析地址数据
+            # Parse address data
             addresses = []
             for addr_data in session_data["addresses"]:
                 addresses.append(Address(
@@ -738,7 +738,7 @@ class DropMail:
                     restore_key=addr_data.get("restoreKey", "")
                 ))
             
-            # 解析邮件数据
+            # Parse email data
             mails = []
             for mail_data in session_data["mails"]:
                 mail = Mail(
@@ -762,5 +762,5 @@ class DropMail:
             )
             
         except Exception as e:
-            print(f"获取会话信息失败: {e}")
+            print(f"Failed to get session information: {e}")
             return None

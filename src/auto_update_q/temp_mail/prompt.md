@@ -1,10 +1,10 @@
-## 目的
-我要开发一个获取临时邮箱的模块。
+## Purpose
+I want to develop a module for obtaining temporary email addresses.
 
-## 需求
-1. 模块需要能够获取一个临时的邮箱地址；
-2. 模块需要能够发送邮件到获取的临时邮箱地址；
-3. 模块需要能够从获取的临时邮箱地址接收邮件；
-4. 请先详细参考email api手册“https://dropmail.me/api/”；
-5. 使用 Python 开发，使用 uv 管理项目依赖；
-6. 类请实现在（src/auto_update_q/temp_mail/）目录下。
+## Requirements
+1. The module needs to be able to obtain a temporary email address;
+2. The module needs to be able to send emails to the obtained temporary email address;
+3. The module needs to be able to receive emails from the obtained temporary email address;
+4. Please first refer to the email API manual in detail at "https://dropmail.me/api/";
+5. Develop using Python, use uv to manage project dependencies;
+6. Please implement the class in the (src/auto_update_q/temp_mail/) directory.

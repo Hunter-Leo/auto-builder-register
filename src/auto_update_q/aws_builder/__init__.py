@@ -1,4 +1,4 @@
-"""AWS Builder ID 自动注册模块"""
+"""AWS Builder ID automatic registration module"""
 
 from .aws_builder import AWSBuilder, AWSBuilderCredentials
 

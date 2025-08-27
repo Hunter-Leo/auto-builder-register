@@ -1,126 +1,126 @@
-# DropMail 使用指南
+# DropMail Usage Guide
 
-## 快速开始
+## Quick Start
 
-### 1. 导入模块
+### 1. Import Module
 
 ```python
 from auto_update_q.temp_mail import DropMail
 ```
 
-### 2. 创建实例并获取临时邮箱
+### 2. Create Instance and Get Temporary Email
 
 ```python
-# 创建 DropMail 实例
+# Create DropMail instance
 dropmail = DropMail()
 
-# 获取临时邮箱地址
+# Get temporary email address
 temp_email = dropmail.get_temp_email()
-print(f"临时邮箱: {temp_email}")
+print(f"Temporary email: {temp_email}")
 ```
 
-### 3. 接收邮件
+### 3. Receive Emails
 
 ```python
-# 方法1: 检查现有邮件
+# Method 1: Check existing emails
 mails = dropmail.get_mails()
 for mail in mails:
-    print(f"从: {mail.from_addr}")
-    print(f"主题: {mail.subject}")
-    print(f"内容: {mail.text}")
+    print(f"From: {mail.from_addr}")
+    print(f"Subject: {mail.subject}")
+    print(f"Content: {mail.text}")
 
-# 方法2: 等待新邮件
-new_mail = dropmail.wait_for_mail(timeout=60)  # 等待1分钟
+# Method 2: Wait for new email
+new_mail = dropmail.wait_for_mail(timeout=60)  # Wait for 1 minute
 if new_mail:
-    print(f"收到新邮件: {new_mail.subject}")
+    print(f"Received new email: {new_mail.subject}")
 ```
 
-### 4. 发送邮件
+### 4. Send Email
 
 ```python
-# 使用Gmail SMTP发送邮件
+# Send email using Gmail SMTP
 success = dropmail.send_email(
     to_email=temp_email,
-    subject="测试邮件",
-    body="这是一封测试邮件",
+    subject="Test Email",
+    body="This is a test email",
     from_email="your_email@gmail.com",
-    password="your_app_password"  # Gmail应用专用密码
+    password="your_app_password"  # Gmail app-specific password
 )
 
 if success:
-    print("邮件发送成功!")
+    print("Email sent successfully!")
 ```
 
-## 完整示例
+## Complete Example
 
 ```python
 from auto_update_q.temp_mail import DropMail
 import time
 
 def main():
-    # 创建实例
+    # Create instance
     dropmail = DropMail()
     
-    # 获取临时邮箱
+    # Get temporary email
     temp_email = dropmail.get_temp_email()
-    print(f"临时邮箱: {temp_email}")
+    print(f"Temporary email: {temp_email}")
     
-    # 发送测试邮件到临时邮箱
-    print("发送测试邮件...")
+    # Send test email to temporary email
+    print("Sending test email...")
     success = dropmail.send_email(
         to_email=temp_email,
-        subject="自动化测试邮件",
-        body="这是一封自动化测试邮件，用于验证临时邮箱功能。",
+        subject="Automated Test Email",
+        body="This is an automated test email to verify temporary email functionality.",
         from_email="your_email@gmail.com",
         password="your_app_password"
     )
     
     if success:
-        print("邮件发送成功，等待接收...")
+        print("Email sent successfully, waiting to receive...")
         
-        # 等待邮件到达
+        # Wait for email to arrive
         new_mail = dropmail.wait_for_mail(timeout=30)
         if new_mail:
-            print("收到邮件!")
-            print(f"主题: {new_mail.subject}")
-            print(f"内容: {new_mail.text}")
+            print("Email received!")
+            print(f"Subject: {new_mail.subject}")
+            print(f"Content: {new_mail.text}")
         else:
-            print("未在指定时间内收到邮件")
+            print("No email received within specified time")
     else:
-        print("邮件发送失败")
+        print("Failed to send email")
 
 if __name__ == "__main__":
     main()
 ```
 
-## 运行演示
+## Run Demos
 
 ```bash
-# 运行快速演示
+# Run quick demo
 uv run python src/auto_update_q/temp_mail/quick_demo.py
 
-# 运行完整示例
+# Run complete example
 uv run python src/auto_update_q/temp_mail/example.py
 
-# 运行测试
+# Run tests
 uv run python src/auto_update_q/temp_mail/test_dropmail.py
 ```
 
-## 注意事项
+## Notes
 
-1. **Gmail SMTP配置**: 如需发送邮件，请确保：
-   - 启用Gmail两步验证
-   - 生成应用专用密码
-   - 使用应用专用密码而非账户密码
+1. **Gmail SMTP Configuration**: To send emails, ensure:
+   - Enable Gmail two-factor authentication
+   - Generate app-specific password
+   - Use app-specific password instead of account password
 
-2. **会话管理**: 
-   - 会话会自动过期，但每次访问会延长过期时间
-   - 可以通过 `get_session_info()` 查看会话状态
+2. **Session Management**: 
+   - Sessions expire automatically, but each access extends expiration time
+   - Use `get_session_info()` to check session status
 
-3. **错误处理**: 
-   - 建议在生产环境中添加适当的异常处理
-   - 网络问题可能导致API调用失败
+3. **Error Handling**: 
+   - Recommend adding appropriate exception handling in production
+   - Network issues may cause API calls to fail
 
-4. **速率限制**: 
-   - 请合理使用API，避免过于频繁的请求
-   - 建议在循环中添加适当的延时
+4. **Rate Limiting**: 
+   - Use API reasonably, avoid overly frequent requests
+   - Recommend adding appropriate delays in loops

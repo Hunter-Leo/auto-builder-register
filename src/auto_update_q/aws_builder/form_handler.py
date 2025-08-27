@@ -1,6 +1,6 @@
 """
-表单处理器
-负责AWS Builder ID注册表单的填写逻辑
+Form Handler
+Responsible for AWS Builder ID registration form filling logic
 """
 
 import logging
@@ -17,17 +17,17 @@ from .optimized_selectors import get_selector
 
 
 class FormHandler:
-    """表单处理器"""
+    """Form Handler"""
     
     def __init__(self, driver: webdriver.Edge, element_waiter: ElementWaiter, 
                  logger: Optional[logging.Logger] = None):
         """
-        初始化表单处理器
+        Initialize form handler
         
         Args:
-            driver: 浏览器驱动
-            element_waiter: 元素等待器
-            logger: 日志记录器
+            driver: Browser driver
+            element_waiter: Element waiter
+            logger: Logger instance
         """
         self.driver = driver
         self.element_waiter = element_waiter
@@ -35,214 +35,214 @@ class FormHandler:
     
     def fill_email_form(self, email: str) -> bool:
         """
-        填写邮箱表单
+        Fill email form
         
         Args:
-            email: 邮箱地址
+            email: Email address
             
         Returns:
-            是否成功填写
+            Whether filling was successful
         """
-        self.logger.info("开始填写邮箱表单...")
+        self.logger.info("Starting to fill email form...")
         
-        # 等待邮箱输入框
+        # Wait for email input field
         email_selectors = get_selector("email_input")
         email_input = self.element_waiter.wait_for_element_with_retry(
-            email_selectors, "邮箱输入框"
+            email_selectors, "email input field"
         )
         
         if not email_input:
-            self.logger.error("未找到邮箱输入框")
+            self.logger.error("Email input field not found")
             return False
         
-        # 填写邮箱
+        # Fill email
         try:
-            self._fill_input_field(email_input, email, "邮箱")
+            self._fill_input_field(email_input, email, "email")
             
-            # 点击下一步按钮
-            return self._click_next_button("email_next_button", "邮箱页面下一步按钮")
+            # Click next button
+            return self._click_next_button("email_next_button", "email page next button")
             
         except Exception as e:
-            self.logger.error(f"填写邮箱时出错: {e}")
+            self.logger.error(f"Error filling email: {e}")
             return False
     
     def fill_name_form(self, name: str) -> bool:
         """
-        填写姓名表单
+        Fill name form
         
         Args:
-            name: 用户姓名
+            name: User name
             
         Returns:
-            是否成功填写
+            Whether filling was successful
         """
-        self.logger.info("开始填写姓名表单...")
+        self.logger.info("Starting to fill name form...")
         
-        # 等待姓名输入框
+        # Wait for name input field
         name_selectors = get_selector("name_input")
         name_input = self.element_waiter.wait_for_element_with_retry(
-            name_selectors, "姓名输入框"
+            name_selectors, "name input field"
         )
         
         if not name_input:
-            self.logger.error("未找到姓名输入框")
+            self.logger.error("Name input field not found")
             return False
         
-        # 填写姓名
+        # Fill name
         try:
-            self._fill_input_field(name_input, name, "姓名")
+            self._fill_input_field(name_input, name, "name")
             
-            # 点击下一步按钮
-            return self._click_next_button("name_next_button", "姓名页面下一步按钮")
+            # Click next button
+            return self._click_next_button("name_next_button", "name page next button")
             
         except Exception as e:
-            self.logger.error(f"填写姓名时出错: {e}")
+            self.logger.error(f"Error filling name: {e}")
             return False
     
     def fill_password_form(self, password: Optional[str] = None) -> Optional[str]:
         """
-        填写密码表单
+        Fill password form
         
         Args:
-            password: 指定密码，如果为None则自动生成
+            password: Specified password, if None will auto-generate
             
         Returns:
-            使用的密码，失败时返回None
+            Password used, None if failed
         """
-        self.logger.info("开始填写密码表单...")
+        self.logger.info("Starting to fill password form...")
         
-        # 生成或使用指定密码
+        # Generate or use specified password
         if password is None:
             password = self.generate_random_password()
-            self.logger.info("已生成随机密码")
+            self.logger.info("Random password generated")
         
-        # 等待密码输入框
+        # Wait for password input field
         password_selectors = get_selector("password_input")
         password_input = self.element_waiter.wait_for_element_with_retry(
-            password_selectors, "密码输入框"
+            password_selectors, "password input field"
         )
         
         if not password_input:
-            self.logger.error("未找到密码输入框")
+            self.logger.error("Password input field not found")
             return None
         
-        # 等待确认密码输入框
+        # Wait for confirm password input field
         confirm_selectors = get_selector("confirm_password_input")
         confirm_input = self.element_waiter.wait_for_element_with_retry(
-            confirm_selectors, "确认密码输入框"
+            confirm_selectors, "confirm password input field"
         )
         
         if not confirm_input:
-            self.logger.error("未找到确认密码输入框")
+            self.logger.error("Confirm password input field not found")
             return None
         
-        # 填写密码
+        # Fill password
         try:
-            self._fill_input_field(password_input, password, "密码")
-            self._fill_input_field(confirm_input, password, "确认密码")
+            self._fill_input_field(password_input, password, "password")
+            self._fill_input_field(confirm_input, password, "confirm password")
             
-            # 密码填写完成，返回密码（不点击下一步按钮，让用户手动处理图形验证码）
-            self.logger.info("密码表单填写完成，等待用户手动处理图形验证码")
+            # Password form completed, return password (don't click next button, let user handle image CAPTCHA manually)
+            self.logger.info("Password form completed, waiting for user to handle image CAPTCHA manually")
             return password
                 
         except Exception as e:
-            self.logger.error(f"填写密码时出错: {e}")
+            self.logger.error(f"Error filling password: {e}")
             return None
     
     def fill_verification_code(self, code: str) -> bool:
         """
-        填写验证码
+        Fill verification code
         
         Args:
-            code: 验证码
+            code: Verification code
             
         Returns:
-            是否成功填写
+            Whether filling was successful
         """
-        self.logger.info("开始填写验证码...")
+        self.logger.info("Starting to fill verification code...")
         
-        # 等待验证码输入框
+        # Wait for verification code input field
         code_selectors = get_selector("verification_code_input")
         code_input = self.element_waiter.wait_for_element_with_retry(
-            code_selectors, "验证码输入框"
+            code_selectors, "verification code input field"
         )
         
         if not code_input:
-            self.logger.error("未找到验证码输入框")
+            self.logger.error("Verification code input field not found")
             return False
         
-        # 填写验证码
+        # Fill verification code
         try:
-            self._fill_input_field(code_input, code, "验证码")
+            self._fill_input_field(code_input, code, "verification code")
             
-            # 点击验证按钮
-            return self._click_next_button("verify_button", "验证按钮")
+            # Click verify button
+            return self._click_next_button("verify_button", "verify button")
             
         except Exception as e:
-            self.logger.error(f"填写验证码时出错: {e}")
+            self.logger.error(f"Error filling verification code: {e}")
             return False
     
     def generate_random_password(self, length: Optional[int] = None) -> str:
         """
-        生成随机密码
+        Generate random password
         
         Args:
-            length: 密码长度
+            length: Password length
             
         Returns:
-            生成的密码
+            Generated password
         """
         length = length or PASSWORD_CONFIG["length"]
         
-        # 确保密码包含所有必需的字符类型
+        # Ensure password contains all required character types
         password_list = []
         
-        # 每种类型至少包含一个字符
+        # Include at least one character from each type
         for char_type, chars in PASSWORD_CONFIG["required_types"].items():
             password_list.append(random.choice(chars))
         
-        # 填充剩余长度
+        # Fill remaining length
         remaining_length = length - len(password_list)
         all_chars = PASSWORD_CONFIG["characters"]
         
         for _ in range(remaining_length):
             password_list.append(random.choice(all_chars))
         
-        # 打乱顺序
+        # Shuffle order
         random.shuffle(password_list)
         
         return ''.join(password_list)
     
     def _fill_input_field(self, element, value: str, field_name: str) -> None:
         """
-        填写输入字段的通用方法
+        Generic method for filling input fields
         
         Args:
-            element: 输入元素
-            value: 要填写的值
-            field_name: 字段名称（用于日志）
+            element: Input element
+            value: Value to fill
+            field_name: Field name (for logging)
         """
-        # 滚动到元素位置
+        # Scroll to element position
         self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
         
-        # 等待元素可见和可交互
+        # Wait for element to be visible and interactive
         self.element_waiter.wait_for_element_interactive(element)
         
-        # 清空并填写
+        # Clear and fill
         element.clear()
         element.send_keys(value)
-        self.logger.info(f"已填写{field_name}: {value if field_name != '密码' else '***'}")
+        self.logger.info(f"Filled {field_name}: {value if field_name != 'password' else '***'}")
     
     def _click_next_button(self, button_key: str, button_name: str) -> bool:
         """
-        点击下一步按钮
+        Click next button
         
         Args:
-            button_key: 按钮选择器键名
-            button_name: 按钮名称（用于日志）
+            button_key: Button selector key name
+            button_name: Button name (for logging)
             
         Returns:
-            是否成功点击
+            Whether click was successful
         """
         button_selectors = get_selector(button_key)
         button = self.element_waiter.wait_for_clickable_with_retry(
@@ -250,23 +250,23 @@ class FormHandler:
         )
         
         if not button:
-            self.logger.error(f"未找到{button_name}")
+            self.logger.error(f"{button_name} not found")
             return False
         
         try:
-            # 滚动到按钮位置
+            # Scroll to button position
             self.driver.execute_script("arguments[0].scrollIntoView(true);", button)
             
-            # 等待按钮可点击
+            # Wait for button to be clickable
             self.element_waiter.wait_for_element_interactive(button)
             
-            # 点击按钮
+            # Click button
             button.click()
-            self.logger.info(f"已点击{button_name}")
+            self.logger.info(f"Clicked {button_name}")
             
-            # 等待页面响应
+            # Wait for page response
             return self.element_waiter.wait_for_page_change()
             
         except Exception as e:
-            self.logger.error(f"点击{button_name}时出错: {e}")
+            self.logger.error(f"Error clicking {button_name}: {e}")
             return False

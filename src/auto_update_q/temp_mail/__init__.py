@@ -1,7 +1,7 @@
 """
-临时邮箱模块
+Temporary Email Module
 
-提供临时邮箱的创建、邮件接收和发送功能。
+Provides temporary email creation, email receiving and sending functionality.
 """
 
 from .dropmail import DropMail

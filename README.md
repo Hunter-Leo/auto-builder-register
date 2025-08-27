@@ -1,188 +1,188 @@
 # Auto Update Q
 
-自动更新 Q 项目
+Automatic Q project updater
 
-## 模块
+## Modules
 
-### AWS Builder ID 自动注册工具
+### AWS Builder ID Auto Registration Tool
 
-基于 Selenium 和 DropMail 实现的 AWS Builder ID 自动注册命令行工具。
+AWS Builder ID automatic registration command-line tool based on Selenium and DropMail.
 
-#### 功能特性
+#### Features
 
-- ✅ 自动生成临时邮箱
-- ✅ 自动填写注册表单
-- ✅ 自动处理邮箱验证码
-- ✅ 在图形验证码前停止自动化
-- ✅ 支持 Safari 和 Edge 浏览器
-- ✅ 自动保存注册信息
-- ✅ 完整的命令行界面
-- ✅ 丰富的配置选项
+- ✅ Automatic temporary email generation
+- ✅ Automatic registration form filling
+- ✅ Automatic email verification code handling
+- ✅ Stop automation before graphical captcha
+- ✅ Support for Safari and Edge browsers
+- ✅ Automatic registration information saving
+- ✅ Complete command line interface
+- ✅ Rich configuration options
 
-#### 快速使用
+#### Quick Start
 
 ```bash
-# 基本使用（自动生成临时邮箱）
+# Basic usage (automatically generate temporary email)
 uv run auto-register-aws-builder register
 
-# 指定邮箱和姓名
+# Specify email and name
 uv run auto-register-aws-builder register --email test@example.com --name "John Doe"
 
-# 使用 Safari 浏览器
+# Use Safari browser
 uv run auto-register-aws-builder register --browser safari
 
-# 启用调试模式
+# Enable debug mode
 uv run auto-register-aws-builder register --debug
 
-# 查看注册记录
+# View registration records
 uv run auto-register-aws-builder list-records
 
-# 查看帮助
+# View help
 uv run auto-register-aws-builder --help
 ```
 
-#### 命令行选项
+#### Command Line Options
 
 ```bash
-# register 命令选项
---email, -e          📧 指定邮箱地址（可选，不提供则自动生成临时邮箱）
---name, -n           👤 用户姓名（默认: "Crazy Joe"）
---password, -p       🔐 指定密码（默认: "CrazyJoe@2025"）
---headless           👻 使用无头模式（Safari不支持）
---browser, -b        🌐 浏览器类型（safari/edge，默认: edge）
---timeout, -t        ⏱️ 操作超时时间（10-300秒，默认: 30）
---wait-minutes, -w   ⏳ 等待用户操作时间（1-120分钟，默认: 30）
---cache-file, -c     💾 缓存文件路径（默认: .cache/auto_register_aws_builder.csv）
---debug, -d          🐛 启用调试模式
---no-temp-email      🚫 不使用临时邮箱，需要手动处理邮箱验证
+# register command options
+--email, -e          📧 Specify email address (optional, auto-generate temp email if not provided)
+--name, -n           👤 User name (default: "Crazy Joe")
+--password, -p       🔐 Specify password (default: "CrazyJoe@2025")
+--headless           👻 Use headless mode (Safari not supported)
+--browser, -b        🌐 Browser type (safari/edge, default: edge)
+--timeout, -t        ⏱️ Operation timeout (10-300 seconds, default: 30)
+--wait-minutes, -w   ⏳ Wait time for user operation (1-120 minutes, default: 30)
+--cache-file, -c     💾 Cache file path (default: .cache/auto_register_aws_builder.csv)
+--debug, -d          🐛 Enable debug mode
+--no-temp-email      🚫 Don't use temporary email, requires manual email verification
 ```
 
-### DropMail 临时邮箱模块
+### DropMail Temporary Email Module
 
-基于 [dropmail.me](https://dropmail.me) API 实现的临时邮箱功能模块。
+Temporary email functionality module based on [dropmail.me](https://dropmail.me) API.
 
-#### 功能特性
+#### Features
 
-- ✅ 获取临时邮箱地址
-- ✅ 接收邮件
-- ✅ 发送邮件（通过外部SMTP服务器）
-- ✅ 会话管理
-- ✅ 多域名支持
-- ✅ 邮件等待功能
+- ✅ Get temporary email addresses
+- ✅ Receive emails
+- ✅ Send emails (via external SMTP server)
+- ✅ Session management
+- ✅ Multi-domain support
+- ✅ Email waiting functionality
 
-#### 快速使用
+#### Quick Usage
 
 ```python
 from auto_update_q.temp_mail import DropMail
 
-# 创建实例并获取临时邮箱
+# Create instance and get temporary email
 dropmail = DropMail()
 temp_email = dropmail.get_temp_email()
-print(f"临时邮箱: {temp_email}")
+print(f"Temporary email: {temp_email}")
 
-# 接收邮件
+# Receive emails
 mails = dropmail.get_mails()
 for mail in mails:
-    print(f"从: {mail.from_addr}, 主题: {mail.subject}")
+    print(f"From: {mail.from_addr}, Subject: {mail.subject}")
 
-# 等待新邮件
+# Wait for new email
 new_mail = dropmail.wait_for_mail(timeout=60)
 if new_mail:
-    print(f"收到新邮件: {new_mail.subject}")
+    print(f"Received new email: {new_mail.subject}")
 ```
 
-详细文档请查看 [temp_mail 模块文档](src/auto_update_q/temp_mail/README.md)
+For detailed documentation, see [temp_mail module documentation](src/auto_update_q/temp_mail/README.md)
 
-## 安装
+## Installation
 
 ```bash
 uv sync
 ```
 
-## 运行演示
+## Run Demos
 
 ```bash
-# 运行 AWS Builder ID 自动注册演示
+# Run AWS Builder ID auto registration demo
 uv run python demo_auto_register.py
 
-# 运行临时邮箱演示
+# Run temporary email demo
 uv run python src/auto_update_q/temp_mail/quick_demo.py
 
-# 运行测试
+# Run tests
 uv run python src/auto_update_q/temp_mail/test_dropmail.py
 uv run python test/test_auto_register.py
 uv run python test/test_cli.py
 ```
 
-## 使用说明
+## Usage Instructions
 
-### Safari 浏览器设置
+### Safari Browser Setup
 
-使用 Safari 浏览器前需要进行以下设置：
+Before using Safari browser, you need to configure the following settings:
 
-1. 打开 Safari 偏好设置
-2. 选择"高级"标签
-3. 勾选"在菜单栏中显示开发菜单"
-4. 在菜单栏的"开发"菜单中选择"允许远程自动化"
+1. Open Safari Preferences
+2. Select the "Advanced" tab
+3. Check "Show Develop menu in menu bar"
+4. In the menu bar's "Develop" menu, select "Allow Remote Automation"
 
-### 注册流程
+### Registration Process
 
-1. 工具会自动创建临时邮箱（或使用指定邮箱）
-2. 自动填写注册表单
-3. 自动处理邮箱验证码
-4. 在图形验证码前停止自动化
-5. 用户手动完成图形验证码
-6. 注册信息自动保存到 CSV 文件
+1. The tool will automatically create a temporary email (or use specified email)
+2. Automatically fill registration form
+3. Automatically handle email verification code
+4. Stop automation before graphical captcha
+5. User manually completes graphical captcha
+6. Registration information automatically saved to CSV file
 
-### 注册记录
+### Registration Records
 
-注册信息会保存到 `.cache/auto_register_aws_builder.csv` 文件中，包含：
-- 时间戳
-- 邮箱地址
-- 密码
-- 姓名
-- 状态
+Registration information is saved to `.cache/auto_register_aws_builder.csv` file, containing:
+- Timestamp
+- Email address
+- Password
+- Name
+- Status
 
-## 开发
+## Development
 
-使用 uv 管理项目依赖：
+Use uv to manage project dependencies:
 
 ```bash
-# 安装依赖
+# Install dependencies
 uv sync
 
-# 添加新依赖
+# Add new dependency
 uv add package_name
 
-# 运行脚本
+# Run script
 uv run python script.py
 
-# 运行命令行工具
+# Run command line tool
 uv run auto-register-aws-builder --help
 ```
 
-## 项目结构
+## Project Structure
 
 ```
 auto-update-q/
 ├── src/
 │   └── auto_update_q/
 │       ├── __init__.py
-│       ├── auto_register.py          # 主命令行工具
-│       ├── aws_builder/              # AWS Builder 注册模块
-│       │   ├── aws_builder.py        # 主注册器
-│       │   ├── browser_manager.py    # 浏览器管理
-│       │   ├── captcha_handler.py    # 验证码处理
-│       │   ├── form_handler.py       # 表单处理
+│       ├── auto_register.py          # Main command line tool
+│       ├── aws_builder/              # AWS Builder registration module
+│       │   ├── aws_builder.py        # Main registrar
+│       │   ├── browser_manager.py    # Browser management
+│       │   ├── captcha_handler.py    # Captcha handling
+│       │   ├── form_handler.py       # Form handling
 │       │   └── ...
-│       └── temp_mail/                # 临时邮箱模块
+│       └── temp_mail/                # Temporary email module
 │           ├── dropmail.py
 │           └── ...
-├── test/                             # 测试文件
+├── test/                             # Test files
 │   ├── test_auto_register.py
 │   └── test_cli.py
-├── .cache/                           # 缓存目录
+├── .cache/                           # Cache directory
 │   └── auto_register_aws_builder.csv
-├── demo_auto_register.py             # 演示脚本
-└── pyproject.toml                    # 项目配置
+├── demo_auto_register.py             # Demo script
+└── pyproject.toml                    # Project configuration
 ```
