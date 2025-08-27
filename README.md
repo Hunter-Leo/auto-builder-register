@@ -14,7 +14,7 @@ AWS Builder ID automatic registration command-line tool based on Selenium and Dr
 - ✅ Automatic registration form filling
 - ✅ Automatic email verification code handling
 - ✅ Stop automation before graphical captcha
-- ✅ Support for Safari and Edge browsers
+- ✅ Support for Edge browser
 - ✅ Automatic registration information saving
 - ✅ Complete command line interface
 - ✅ Rich configuration options
@@ -28,8 +28,8 @@ uv run auto-register-aws-builder register
 # Specify email and name
 uv run auto-register-aws-builder register --email test@example.com --name "John Doe"
 
-# Use Safari browser
-uv run auto-register-aws-builder register --browser safari
+# Use Edge browser (default)
+uv run auto-register-aws-builder register --browser edge
 
 # Enable debug mode
 uv run auto-register-aws-builder register --debug
@@ -48,8 +48,8 @@ uv run auto-register-aws-builder --help
 --email, -e          📧 Specify email address (optional, auto-generate temp email if not provided)
 --name, -n           👤 User name (default: "Crazy Joe")
 --password, -p       🔐 Specify password (default: "CrazyJoe@2025")
---headless           👻 Use headless mode (Safari not supported)
---browser, -b        🌐 Browser type (safari/edge, default: edge)
+--headless           👻 Use headless mode
+--browser, -b        🌐 Browser type (edge, default: edge)
 --timeout, -t        ⏱️ Operation timeout (10-300 seconds, default: 30)
 --wait-minutes, -w   ⏳ Wait time for user operation (1-120 minutes, default: 30)
 --cache-file, -c     💾 Cache file path (default: .cache/auto_register_aws_builder.csv)
@@ -115,15 +115,6 @@ uv run python test/test_cli.py
 ```
 
 ## Usage Instructions
-
-### Safari Browser Setup
-
-Before using Safari browser, you need to configure the following settings:
-
-1. Open Safari Preferences
-2. Select the "Advanced" tab
-3. Check "Show Develop menu in menu bar"
-4. In the menu bar's "Develop" menu, select "Allow Remote Automation"
 
 ### Registration Process
 

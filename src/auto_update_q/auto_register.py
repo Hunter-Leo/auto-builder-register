@@ -347,7 +347,7 @@ def register(
     browser: Annotated[str, typer.Option(
         "--browser", "-b",
         help="🌐 Specify browser type",
-        click_type=click.Choice(["safari", "edge"], case_sensitive=False)
+        click_type=click.Choice(["edge"], case_sensitive=False)
     )] = "edge",
     
     timeout: Annotated[int, typer.Option(
