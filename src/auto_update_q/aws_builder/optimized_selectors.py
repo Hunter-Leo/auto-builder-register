@@ -22,10 +22,13 @@ OPTIMIZED_SELECTORS = {
     
     # Step 2: Email input page
     "email_input": [
-        "input[autocomplete='on'][type='text']",  # Precise attribute combination based on page source
-        "input#formField24-1756198202888-5657",  # Precise ID based on page source
+        "input#awsui-input-0",  # Current page ID
+        "input.awsui-input.awsui-input-type-text[type='text']",  # Current page class combination
+        "input[autocomplete='off'][type='text'].awsui-input",  # Current page attributes
+        "input[autocomplete='on'][type='text']",  # Fallback: original attribute combination
+        "input#formField24-1756198202888-5657",  # Fallback: old ID
         "[data-testid='signup-email-input'] input",  # Test ID selector
-        "input.awsui_input_2rhyz_7gdci_149[autocomplete='on']",  # Class and attribute combination
+        "input.awsui_input_2rhyz_7gdci_149[autocomplete='on']",  # Old class combination
         "input[aria-labelledby*='email']",  # Accessibility selector
         "input[type='text'][value*='@']",  # Email pattern matching
     ],
