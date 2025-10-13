@@ -179,7 +179,7 @@ class CaptchaHandler:
         self.logger.info("Waiting for email verification code...")
         
         max_attempts = 3  # Maximum 3 attempts
-        wait_time_per_attempt = 10  # Wait 10 seconds per attempt
+        wait_time_per_attempt = 300  # Wait 10 seconds per attempt
         
         for attempt in range(max_attempts):
             try:
