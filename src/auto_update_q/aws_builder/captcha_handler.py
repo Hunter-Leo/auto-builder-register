@@ -175,45 +175,46 @@ class CaptchaHandler:
             return self._manual_get_verification_code()
     
     def _auto_get_verification_code(self, dropmail, timeout: int) -> Optional[str]:
-        """Automatically get verification code from email with timeout auto-refresh"""
+        """Automatically get verification code from email with optimized retry logic"""
         self.logger.info("Waiting for email verification code...")
         
-        max_attempts = 3  # Maximum 3 attempts
-        wait_time_per_attempt = 300  # Wait 10 seconds per attempt
+        max_attempts = 4  # Maximum 4 attempts
+        wait_times = [60, 90, 120, 180]  # Progressive wait times: 1min, 1.5min, 2min, 3min
         
         for attempt in range(max_attempts):
+            wait_time = wait_times[attempt]
             try:
-                self.logger.info(f"Attempt {attempt + 1} to get verification code...")
+                self.logger.info(f"Attempt {attempt + 1}/{max_attempts}: waiting {wait_time}s for verification code...")
                 
-                # Wait for new email (10 seconds per attempt)
-                new_mail = dropmail.wait_for_mail(timeout=wait_time_per_attempt)
+                # Wait for new email with progressive timeout
+                new_mail = dropmail.wait_for_mail(timeout=wait_time)
                 
                 if new_mail:
                     # Extract verification code
                     verification_code = self.extract_verification_code_from_email(new_mail.text)
                     if verification_code:
-                        self.logger.info(f"Automatically got verification code: {verification_code}")
+                        self.logger.info(f"Got verification code: {verification_code}")
                         return verification_code
                     else:
-                        self.logger.warning("No verification code found in email, continuing to wait...")
+                        self.logger.warning("No verification code in email, continuing...")
                 else:
-                    # Timeout without receiving email, try to resend verification code
-                    if attempt < max_attempts - 1:  # Not the last attempt
-                        self.logger.info(f"No verification code received after waiting {wait_time_per_attempt} seconds, trying to resend...")
+                    # No email received, try resend if not last attempt
+                    if attempt < max_attempts - 1:
+                        self.logger.info(f"No email after {wait_time}s, trying to resend...")
                         if self._resend_verification_code():
-                            self.logger.info("Verification code resent, continuing to wait...")
-                            continue
+                            self.logger.info("Verification code resent")
+                            time.sleep(5)  # Brief pause after resend
                         else:
-                            self.logger.warning("Failed to resend verification code, continuing to wait...")
+                            self.logger.warning("Resend failed, continuing to wait...")
                     else:
-                        self.logger.error("Last attempt still did not receive verification email")
+                        self.logger.error("Final attempt - no verification email received")
                         
             except Exception as e:
-                self.logger.error(f"Error getting verification code on attempt {attempt + 1}: {e}")
+                self.logger.error(f"Attempt {attempt + 1} error: {e}")
                 if attempt < max_attempts - 1:
-                    continue
+                    time.sleep(10)  # Brief pause before retry
         
-        self.logger.error("All attempts failed, unable to get verification code")
+        self.logger.error("All attempts exhausted - no verification code")
         return None
     
     def _resend_verification_code(self) -> bool:

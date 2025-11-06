@@ -86,21 +86,20 @@ OPTIMIZED_SELECTORS = {
     
     # Step 5: Password setup page
     "password_input": [
-        "input#awsui-input-1",  # Precise ID for password input field
-        "input[class*='awsui-input'][class*='type-password'][type='password']:nth-of-type(2)",  # Second password field
-        "input[type='password'][autocomplete='on']:nth-of-type(2)",  # Second password input field
-        "input[class*='awsui-input'][type='password']:nth-of-type(2)",  # Second awsui password field
+        "input[placeholder='Enter password'][type='password']",  # Current page placeholder
+        "input[class='awsui_input_2rhyz_1q6ro_149'][type='password']:first-of-type",  # First password field by class
+        "input[type='password'][autocomplete='off']:first-of-type",  # First password field
+        "input#awsui-input-1",  # Fallback ID
         "input[data-testid='password-input']",
-        "input[type='password'][autocomplete='new-password']:nth-of-type(2)",
         "input[aria-label*='password']:not([aria-label*='confirm'])",
         "#password",
     ],
     "confirm_password_input": [
-        "input#awsui-input-0",  # Precise ID for password confirmation field
-        "input[class*='awsui-input'][class*='type-password'][type='password']:nth-of-type(1)",  # First password field
-        "input[type='password'][autocomplete='on']:nth-of-type(1)",  # First password input field
-        "input[class*='awsui-input'][type='password']:nth-of-type(1)",  # First awsui password field
-        "input[data-testid='test-retype-input']",  # Direct match for data-testid
+        "input[placeholder='Re-enter password'][type='password']",  # Current page placeholder
+        "input[class='awsui_input_2rhyz_1q6ro_149'][type='password']:last-of-type",  # Second password field by class
+        "input[type='password'][autocomplete='off']:last-of-type",  # Second password field
+        "input#awsui-input-0",  # Fallback ID
+        "input[data-testid='test-retype-input']",
         "input[data-testid='confirm-password-input']",
         "input[aria-label*='confirm']",
         "#confirmPassword",
