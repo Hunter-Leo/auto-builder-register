@@ -108,9 +108,9 @@ def save_registration_data(email: str, password: str, name: str,
         logger.error(f"Failed to save registration data: {e}")
 
 
-def select_session_from_list(dropmail: DropMail, logger: logging.Logger) -> Optional[str]:
+def select_session_for_restore(dropmail: DropMail, logger: logging.Logger) -> Optional[str]:
     """
-    Display recoverable Session list for user selection
+    Display cached Session list for user selection (no validation or cleanup)
     
     Args:
         dropmail: DropMail instance
@@ -119,51 +119,23 @@ def select_session_from_list(dropmail: DropMail, logger: logging.Logger) -> Opti
     Returns:
         Selected Session ID, None if cancelled
     """
-    logger.info("🔍 Checking available Sessions...")
+    logger.info("🔍 Loading cached Sessions...")
     
-    # Clean up expired Sessions
-    expired_count = dropmail.cleanup_expired_sessions()
-    if expired_count > 0:
-        logger.info(f"🧹 Cleaned up {expired_count} expired Sessions")
-    
-    # Get available Sessions
+    # Get all cached Sessions without validation
     sessions = dropmail.list_cached_sessions()
     
     if not sessions:
-        logger.warning("📭 No recoverable Sessions found")
+        logger.warning("📭 No cached Sessions found")
         return None
     
-    # Validate Sessions and filter
-    valid_sessions = []
-    logger.info("🔍 Validating Sessions...")
-    
-    for session_cache in sessions:
-        # Temporarily switch to this session for validation
-        old_token = dropmail.auth_token
-        old_session = dropmail.session_id
-        
-        dropmail.auth_token = session_cache.auth_token
-        dropmail.session_id = session_cache.session_id
-        
-        if dropmail._verify_session():
-            valid_sessions.append(session_cache)
-        else:
-            logger.info(f"❌ Session {session_cache.session_id[:8]}... expired, will be deleted")
-            dropmail._remove_expired_session(session_cache.session_id)
-        
-        # Restore original settings
-        dropmail.auth_token = old_token
-        dropmail.session_id = old_session
-    
-    if not valid_sessions:
-        logger.warning("📭 No valid Sessions found")
-        return None
+    # Sort by last accessed time (most recent first)
+    sessions.sort(key=lambda x: x.last_accessed, reverse=True)
     
     # Display Sessions list
-    logger.info("📋 Recoverable Sessions:")
+    logger.info("📋 Cached Sessions (sorted by last used):")
     logger.info("=" * 80)
     
-    for i, session_cache in enumerate(valid_sessions, 1):
+    for i, session_cache in enumerate(sessions, 1):
         # Format time display
         try:
             created_dt = datetime.fromisoformat(session_cache.created_at.replace('Z', '+00:00'))
@@ -178,33 +150,125 @@ def select_session_from_list(dropmail: DropMail, logger: logging.Logger) -> Opti
             last_accessed = session_cache.last_accessed[:19].replace('T', ' ')
         
         logger.info(f"{i}. Email: {session_cache.email_address}")
-        logger.info(f"   Session ID: {session_cache.session_id}")
+        logger.info(f"   Password: {getattr(session_cache, 'password', 'N/A')}")
         logger.info(f"   Created: {created_time}")
-        logger.info(f"   Last accessed: {last_accessed}")
+        logger.info(f"   Last used: {last_accessed}")
+        logger.info(f"   Session ID: {session_cache.session_id}")
         logger.info("-" * 40)
     
     # User selection
     while True:
         try:
-            choice = input(f"\nPlease select Session to restore (1-{len(valid_sessions)}, 0=cancel): ").strip()
+            choice = input(f"\nPlease select Session to restore (1-{len(sessions)}, 0=cancel): ").strip()
             
             if choice == '0':
                 logger.info("❌ User cancelled selection")
                 return None
             
             choice_num = int(choice)
-            if 1 <= choice_num <= len(valid_sessions):
-                selected_session = valid_sessions[choice_num - 1]
+            if 1 <= choice_num <= len(sessions):
+                selected_session = sessions[choice_num - 1]
                 logger.info(f"✓ Selected Session: {selected_session.email_address}")
                 return selected_session.session_id
             else:
-                print(f"❌ Please enter a number between 1-{len(valid_sessions)}")
-                
+                logger.warning(f"❌ Invalid selection, please enter 1-{len(sessions)}")
+        
         except ValueError:
-            print("❌ Please enter a valid number")
+            logger.warning("❌ Please enter a valid number")
         except KeyboardInterrupt:
-            logger.info("\n❌ User interrupted selection")
+            logger.info("\n❌ User cancelled selection")
             return None
+
+
+def monitor_emails_with_full_content(dropmail: DropMail, logger: logging.Logger, check_interval: int = 10) -> None:
+    """
+    Continuously monitor emails and display newly received emails with full content
+    
+    Args:
+        dropmail: DropMail instance
+        logger: Logger
+        check_interval: Check interval (seconds)
+    """
+    logger.info("📧 Starting email monitoring with full content display...")
+    logger.info(f"📬 Email address: {dropmail.addresses[0].address if dropmail.addresses else 'N/A'}")
+    logger.info(f"🔄 Check interval: {check_interval} seconds")
+    logger.info("⚠️  Press Ctrl+C to stop monitoring")
+    logger.info("=" * 60)
+    
+    # Get current existing email count and display full content
+    try:
+        existing_mails = dropmail.get_mails()
+        last_mail_count = len(existing_mails)
+        last_mail_id = existing_mails[-1].id if existing_mails else None
+        
+        if existing_mails:
+            logger.info(f"📨 Currently have {last_mail_count} emails")
+            logger.info("All existing emails with full content:")
+            for i, mail in enumerate(existing_mails, 1):
+                logger.info("=" * 80)
+                logger.info(f"📧 Email #{i}")
+                logger.info(f"From: {mail.from_addr}")
+                logger.info(f"To: {mail.to_addr}")
+                logger.info(f"Subject: {mail.subject}")
+                logger.info(f"Time: {mail.received_at}")
+                logger.info("-" * 40)
+                logger.info("Content:")
+                logger.info(mail.text if mail.text else "No text content")
+                if mail.html:
+                    logger.info("\nHTML Content:")
+                    logger.info(mail.html)
+                logger.info("=" * 80)
+        else:
+            logger.info("📭 No emails yet")
+            
+    except Exception as e:
+        logger.error(f"❌ Failed to get existing emails: {e}")
+        last_mail_id = None
+        last_mail_count = 0
+    
+    logger.info("🔍 Starting to monitor new emails...")
+    
+    try:
+        while True:
+            try:
+                # Check for new emails
+                if last_mail_id:
+                    new_mails = dropmail.get_mails(after_mail_id=last_mail_id)
+                else:
+                    all_mails = dropmail.get_mails()
+                    new_mails = all_mails[last_mail_count:] if len(all_mails) > last_mail_count else []
+                
+                if new_mails:
+                    logger.info(f"🎉 Received {len(new_mails)} new email(s)!")
+                    
+                    for mail in new_mails:
+                        logger.info("=" * 80)
+                        logger.info("📧 NEW EMAIL")
+                        logger.info(f"From: {mail.from_addr}")
+                        logger.info(f"To: {mail.to_addr}")
+                        logger.info(f"Subject: {mail.subject}")
+                        logger.info(f"Time: {mail.received_at}")
+                        logger.info("-" * 40)
+                        logger.info("Content:")
+                        logger.info(mail.text if mail.text else "No text content")
+                        if mail.html:
+                            logger.info("\nHTML Content:")
+                            logger.info(mail.html)
+                        logger.info("=" * 80)
+                    
+                    # Update tracking variables
+                    last_mail_id = new_mails[-1].id
+                    last_mail_count += len(new_mails)
+                
+                # Wait before next check
+                time.sleep(check_interval)
+                
+            except Exception as e:
+                logger.error(f"❌ Error checking emails: {e}")
+                time.sleep(check_interval)
+                
+    except KeyboardInterrupt:
+        logger.info("\n⏹️  Email monitoring stopped by user")
 
 
 def monitor_emails(dropmail: DropMail, logger: logging.Logger, check_interval: int = 10) -> None:
@@ -439,7 +503,7 @@ def register(
         if only_mail or (not email and not no_temp_email):
             logger.info("📧 Creating temporary email...")
             dropmail = DropMail(cache_file=dropmail_cache)
-            email = dropmail.get_temp_email()
+            email = dropmail.get_temp_email(prefer_com=True)
             logger.info(f"✓ Temporary email: {email}")
             logger.info(f"✓ Session ID: {dropmail.session_id}")
             
@@ -499,6 +563,11 @@ def register(
             cache_file=cache_path,
             logger=logger
         )
+        
+        # Save successful session to dropmail cache
+        if 'dropmail' in locals() and dropmail:
+            dropmail.save_successful_session(password=result.password)
+            logger.info("✓ Email session saved to cache")
         
         # Step 5: Display results and wait for user action
         logger.info("🎉 Automatic registration process complete!")
@@ -581,19 +650,20 @@ def sessions(
         # Display Session list for user selection and monitoring
         logger.info("🔄 Restoring DropMail Session")
         
-        selected_session_id = select_session_from_list(dropmail, logger)
+        selected_session_id = select_session_for_restore(dropmail, logger)
         if not selected_session_id:
             logger.info("❌ No Session selected, program exits")
             raise typer.Exit(0)
         
         if dropmail.restore_session(selected_session_id):
+            dropmail.update_last_accessed()  # Update last accessed time
             email = dropmail.addresses[0].address if dropmail.addresses else None
             if email:
                 logger.info(f"✓ Successfully restored email: {email}")
                 logger.info(f"✓ Session ID: {selected_session_id}")
                 
-                # Start monitoring emails
-                monitor_emails(dropmail, logger, check_interval=10)
+                # Start monitoring emails with full content display
+                monitor_emails_with_full_content(dropmail, logger, check_interval=10)
                 return
             else:
                 logger.error("❌ No email address found in restored Session")

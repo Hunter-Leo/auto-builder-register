@@ -9,6 +9,7 @@ import json
 import time
 import uuid
 import os
+import logging
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 from datetime import datetime
@@ -29,6 +30,7 @@ class SessionCache:
     created_at: str
     last_accessed: str
     restore_keys: List[str]
+    password: Optional[str] = None  # Add password field
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
@@ -37,6 +39,9 @@ class SessionCache:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'SessionCache':
         """Create instance from dictionary"""
+        # Handle backward compatibility for existing cache files
+        if 'password' not in data:
+            data['password'] = None
         return cls(**data)
 
 
@@ -87,6 +92,7 @@ class DropMail:
         self.base_url = "https://dropmail.me/api/graphql"
         self.session_id: Optional[str] = None
         self.addresses: List[Address] = []
+        self.logger = logging.getLogger("dropmail")
         
         # Set cache file path
         if cache_file:
@@ -101,7 +107,73 @@ class DropMail:
         """Generate authentication token"""
         return str(uuid.uuid4()).replace('-', '')[:16]
     
-    def save_session(self) -> bool:
+    def save_successful_session(self, password: Optional[str] = None) -> bool:
+        """
+        Save session after successful registration
+        
+        Args:
+            password: Password used for registration
+        
+        Returns:
+            Whether save was successful
+        """
+        if not self.session_id or not self.addresses:
+            return False
+        
+        try:
+            # Read existing cache
+            sessions = self._load_cache()
+            
+            # Create cache data
+            session_cache = SessionCache(
+                session_id=self.session_id,
+                auth_token=self.auth_token,
+                email_address=self.addresses[0].address if self.addresses else "",
+                expires_at="",  # Will be updated during validation
+                created_at=datetime.now().isoformat(),
+                last_accessed=datetime.now().isoformat(),
+                restore_keys=[addr.restore_key for addr in self.addresses],
+                password=password
+            )
+            
+            # Update expiration time
+            session_info = self.get_session_info()
+            if session_info:
+                session_cache.expires_at = session_info.expires_at
+            
+            # Save to cache
+            sessions[self.session_id] = session_cache.to_dict()
+            
+            # Write to file
+            with open(self.cache_file, 'w', encoding='utf-8') as f:
+                json.dump(sessions, f, indent=2, ensure_ascii=False)
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to save session: {e}")
+            return False
+    
+    def update_last_accessed(self) -> bool:
+        """
+        Update last accessed time for current session
+        
+        Returns:
+            Whether update was successful
+        """
+        if not self.session_id:
+            return False
+            
+        try:
+            sessions = self._load_cache()
+            if self.session_id in sessions:
+                sessions[self.session_id]['last_accessed'] = datetime.now().isoformat()
+                with open(self.cache_file, 'w', encoding='utf-8') as f:
+                    json.dump(sessions, f, indent=2, ensure_ascii=False)
+                return True
+        except Exception as e:
+            self.logger.error(f"Failed to update last accessed time: {e}")
+        return False
         """
         Save current session to cache file
         
@@ -141,7 +213,7 @@ class DropMail:
             return True
             
         except Exception as e:
-            print(f"Failed to save session: {e}")
+            self.logger.error(f"Failed to save session: {e}")
             return False
     
     def _load_cache(self) -> Dict[str, Dict[str, Any]]:
@@ -158,7 +230,7 @@ class DropMail:
             with open(self.cache_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except Exception as e:
-            print(f"Failed to load cache file: {e}")
+            self.logger.error(f"Failed to load cache file: {e}")
             return {}
     
     def list_cached_sessions(self) -> List[SessionCache]:
@@ -175,7 +247,7 @@ class DropMail:
             try:
                 sessions.append(SessionCache.from_dict(session_data))
             except Exception as e:
-                print(f"Failed to parse session data: {e}")
+                self.logger.error(f"Failed to parse session data: {e}")
                 continue
         
         # Sort by creation time
@@ -184,7 +256,7 @@ class DropMail:
     
     def restore_session(self, session_id: str) -> bool:
         """
-        Restore specified session
+        Restore specified session (including expired ones using restore keys)
         
         Args:
             session_id: Session ID to restore
@@ -195,7 +267,7 @@ class DropMail:
         sessions_data = self._load_cache()
         
         if session_id not in sessions_data:
-            print(f"Session {session_id} not found")
+            self.logger.error(f"Session {session_id} not found")
             return False
         
         try:
@@ -205,28 +277,144 @@ class DropMail:
             self.auth_token = session_cache.auth_token
             self.session_id = session_id
             
-            # Verify if session is still valid
+            # First try to verify if session is still valid
             if self._verify_session():
-                # Restore address information
+                # Session is still valid, restore normally
                 session_info = self.get_session_info()
                 if session_info:
                     self.addresses = session_info.addresses
-                    
-                    # Update last accessed time
-                    self._update_last_accessed(session_id)
-                    
-                    print(f"Successfully restored Session: {session_id}")
-                    print(f"Email address: {session_cache.email_address}")
+                    self.logger.info(f"Successfully restored active Session: {session_id}")
+                    self.logger.info(f"Email address: {session_cache.email_address}")
                     return True
             else:
-                print(f"Session {session_id} has expired or is invalid")
-                # Remove expired session from cache
-                self._remove_expired_session(session_id)
-                return False
+                # Session expired, try to restore using restore keys
+                self.logger.info(f"Session {session_id} expired, attempting to restore using restore keys...")
+                
+                if session_cache.restore_keys:
+                    success = self._restore_using_keys(session_cache.restore_keys)
+                    if success:
+                        self.logger.info(f"Successfully restored expired Session using restore keys")
+                        self.logger.info(f"Email address: {session_cache.email_address}")
+                        # Update session info in cache
+                        self._update_restored_session(session_id, session_cache)
+                        return True
+                    else:
+                        self.logger.warning(f"Failed to restore Session using restore keys")
+                        return False
+                else:
+                    self.logger.warning(f"No restore keys available for Session {session_id}")
+                    return False
                 
         except Exception as e:
-            print(f"Failed to restore Session: {e}")
+            self.logger.error(f"Failed to restore Session: {e}")
             return False
+    
+    def _restore_using_keys(self, restore_keys: List[str]) -> bool:
+        """
+        Restore session using restore keys
+        
+        Args:
+            restore_keys: List of restore keys
+            
+        Returns:
+            Whether restore was successful
+        """
+        # Get the original email address from cache
+        sessions_data = self._load_cache()
+        original_email = None
+        
+        if self.session_id in sessions_data:
+            session_cache = SessionCache.from_dict(sessions_data[self.session_id])
+            original_email = session_cache.email_address
+        
+        if not original_email:
+            self.logger.error("Cannot find original email address for restore")
+            return False
+        
+        # Create a new session first, then try to restore address to it
+        try:
+            new_session = self.create_session()
+            new_session_id = self.session_id
+        except Exception as e:
+            self.logger.error(f"Failed to create new session: {e}")
+            return False
+        
+        for restore_key in restore_keys:
+            try:
+                # Try with sessionId parameter
+                query = """
+                mutation($input: RestoreAddressInput!) {
+                    restoreAddress(input: $input) {
+                        id,
+                        address,
+                        restoreKey
+                    }
+                }
+                """
+                variables = {
+                    "input": {
+                        "sessionId": new_session_id,
+                        "mailAddress": original_email,
+                        "restoreKey": restore_key
+                    }
+                }
+                
+                data = self._make_request(query, variables)
+                
+                if "restoreAddress" in data and data["restoreAddress"]:
+                    restore_data = data["restoreAddress"]
+                    
+                    # Update address information with restored address
+                    self.addresses = [Address(
+                        id=restore_data["id"],
+                        address=restore_data["address"],
+                        restore_key=restore_data["restoreKey"]
+                    )]
+                    
+                    self.logger.info(f"Successfully restored address: {restore_data['address']}")
+                    return True
+                
+            except Exception as e:
+                # Restore keys can expire, this is expected behavior
+                self.logger.debug(f"Restore attempt failed: {str(e)[:100]}...")
+                continue
+        
+        self.logger.info("All restore keys have expired - this is normal for old sessions")
+        return False
+    
+    def _update_restored_session(self, old_session_id: str, session_cache: SessionCache) -> None:
+        """
+        Update restored session information in cache
+        
+        Args:
+            old_session_id: Original session ID
+            session_cache: Original session cache data
+        """
+        try:
+            sessions_data = self._load_cache()
+            
+            # Update with new session info
+            session_cache.session_id = self.session_id
+            session_cache.last_accessed = datetime.now().isoformat()
+            session_cache.restore_keys = [addr.restore_key for addr in self.addresses]
+            
+            # Get new expiration time
+            session_info = self.get_session_info()
+            if session_info:
+                session_cache.expires_at = session_info.expires_at
+            
+            # Remove old session and add new one
+            if old_session_id in sessions_data:
+                del sessions_data[old_session_id]
+            
+            sessions_data[self.session_id] = session_cache.to_dict()
+            
+            # Write to file
+            with open(self.cache_file, 'w', encoding='utf-8') as f:
+                json.dump(sessions_data, f, indent=2, ensure_ascii=False)
+                
+        except Exception as e:
+            self.logger.error(f"Failed to update restored session: {e}")
     
     def _verify_session(self) -> bool:
         """
@@ -276,7 +464,7 @@ class DropMail:
                     json.dump(sessions_data, f, indent=2, ensure_ascii=False)
                     
         except Exception as e:
-            print(f"Failed to update last accessed time: {e}")
+            self.logger.error(f"Failed to update last accessed time: {e}")
     
     def _remove_expired_session(self, session_id: str) -> None:
         """
@@ -294,10 +482,10 @@ class DropMail:
                 with open(self.cache_file, 'w', encoding='utf-8') as f:
                     json.dump(sessions_data, f, indent=2, ensure_ascii=False)
                     
-                print(f"Removed expired Session: {session_id}")
+                self.logger.info(f"Removed expired Session: {session_id}")
                 
         except Exception as e:
-            print(f"Failed to remove expired Session: {e}")
+            self.logger.error(f"Failed to remove expired Session: {e}")
     
     def cleanup_expired_sessions(self) -> int:
         """
@@ -381,16 +569,28 @@ class DropMail:
         data = self._make_request(query)
         return data["domains"]
     
-    def create_session(self, domain_id: Optional[str] = None) -> Session:
+    def create_session(self, domain_id: Optional[str] = None, prefer_com: bool = True) -> Session:
         """
         Create new email session
         
         Args:
             domain_id: Specify domain ID, uses random domain if not provided
+            prefer_com: Prefer .com domains when True
             
         Returns:
             Created session object
         """
+        # If no domain specified and prefer_com is True, try to find .com domain
+        if not domain_id and prefer_com:
+            try:
+                domains = self.get_domains()
+                com_domains = [d for d in domains if d.get('name', '').endswith('.com')]
+                if com_domains:
+                    # Use first .com domain found
+                    domain_id = com_domains[0]['id']
+            except:
+                pass  # Fall back to random domain
+        
         if domain_id:
             query = """
             mutation($domainId: ID!) {
@@ -446,8 +646,8 @@ class DropMail:
         self.session_id = session.id
         self.addresses = addresses
         
-        # Auto save to cache
-        self.save_session()
+        # Auto save to cache - but don't save yet, wait for successful registration
+        # self.save_session()
         
         return session
     
@@ -499,15 +699,18 @@ class DropMail:
         self.addresses.append(address)
         return address
     
-    def get_temp_email(self) -> str:
+    def get_temp_email(self, prefer_com: bool = True) -> str:
         """
         Get temporary email address
+        
+        Args:
+            prefer_com: Prefer .com domains when True
         
         Returns:
             Temporary email address
         """
         if not self.addresses:
-            session = self.create_session()
+            session = self.create_session(prefer_com=prefer_com)
             return session.addresses[0].address
         
         return self.addresses[0].address
@@ -628,7 +831,7 @@ class DropMail:
                 time.sleep(check_interval)
                 
             except Exception as e:
-                print(f"Error checking for mails: {e}")
+                self.logger.error(f"Error checking for mails: {e}")
                 time.sleep(check_interval)
         
         return None
@@ -681,7 +884,7 @@ class DropMail:
             return True
             
         except Exception as e:
-            print(f"Failed to send email: {e}")
+            self.logger.error(f"Failed to send email: {e}")
             return False
     
     def get_session_info(self) -> Optional[Session]:
@@ -762,5 +965,5 @@ class DropMail:
             )
             
         except Exception as e:
-            print(f"Failed to get session information: {e}")
+            self.logger.error(f"Failed to get session information: {e}")
             return None

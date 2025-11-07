@@ -10,14 +10,16 @@ AWS Builder ID automatic registration tool with temporary email support
 
 ## Features
 
-- ✅ Automatic temporary email generation
+- ✅ Automatic temporary email generation (prioritizes .com domains)
 - ✅ Automatic registration form filling
 - ✅ Automatic email verification code handling
 - ✅ Stop automation before graphical captcha
 - ✅ Support for Edge browser
-- ✅ Automatic registration information saving
+- ✅ Smart registration information caching (only saves successful registrations)
+- ✅ Session restore functionality (recover expired email sessions)
 - ✅ Complete command line interface
 - ✅ Rich configuration options
+- ✅ Full email content display in restore mode
 
 ## Screenshot
 
@@ -87,6 +89,9 @@ auto-register-aws-builder register --debug
 
 # View registration records
 auto-register-aws-builder list-records
+
+# Restore expired email sessions and monitor emails
+auto-register-aws-builder sessions --restore
 
 # View help
 auto-register-aws-builder --help
@@ -169,12 +174,21 @@ uv run python test/test_cli.py
 
 ### Registration Process
 
-1. The tool will automatically create a temporary email (or use specified email)
+1. The tool will automatically create a temporary email (prioritizes .com domains)
 2. Automatically fill registration form
 3. Automatically handle email verification code
 4. Stop automation before graphical captcha
 5. User manually completes graphical captcha
-6. Registration information automatically saved to CSV file
+6. Registration information automatically saved to CSV file (only on success)
+7. Email session cached for future restore (only on success)
+
+### Session Management
+
+Use `sessions --restore` command to:
+- View all cached email sessions (sorted by last used time)
+- Restore expired email sessions using restore keys
+- Monitor emails with full content display
+- Access historical registration data
 
 ### Registration Records
 
@@ -184,6 +198,8 @@ Registration information is saved to `.cache/auto_register_aws_builder.csv` file
 - Password
 - Name
 - Status
+
+Email sessions are cached in `.cache/dropmail_sessions.json` for restore functionality.
 
 ## Development
 
